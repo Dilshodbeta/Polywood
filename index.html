@@ -10955,7 +10955,7 @@ var K='lmFlex:';
 function st(){return window.__lmStore&&window.__lmStore.getState()}
 function gens(){return window.__lmGens||[]}
 function gen(){var s=st();return s&&gens().find(function(g){return g.id===s.generatorId})}
-function DEF(){return{on:false,kind:'straight',pitch:4,auto:true,w:1,kerf:0.2,hole:1.6,edge:3.2,amp:1.8,wave:20,deco:'none',dd:1.4,dsh:'circle',dper:0,seg:22,br:3,grad:'none',gk:.5,sel:null}}
+function DEF(){return{on:false,kind:'straight',pitch:4,auto:true,w:1,kerf:0.2,hole:1.6,edge:3.2,amp:1.8,wave:20,deco:'none',dd:1.4,dsh:'circle',dper:0,seg:22,br:3,grad:'none',gk:.5,per:null,sel:null}}
 function cfg(id){var c=DEF();try{var o=JSON.parse(localStorage.getItem(K+id)||'null');if(o)for(var k in o)c[k]=o[k]}catch(e){}return c}
 function save(id,c){try{localStorage.setItem(K+id,JSON.stringify(c))}catch(e){}}
 function X(p){return p.x!==undefined?p.x:p[0]}function Y(p){return p.y!==undefined?p.y:p[1]}
@@ -11074,7 +11074,26 @@ function colPos(A,c,step){ // kesiklar o'rni; gradient: markazda yoki chetlarda 
  if(!c.grad||c.grad==='none'){var n=Math.max(0,Math.round((b-a)/step)),u=(a+b)/2-n*step/2;for(var k=0;k<=n;k++)o.push(u+k*step);return o}
  var g=Math.min(.8,Math.max(0,c.gk||.5)),f=function(u){var x=Math.abs(2*(u-a)/(b-a)-1);return c.grad==='center'?1-g*(1-x):1-g*x};
  for(var u2=a;u2<=b+1e-9;u2+=step*f(u2))o.push(u2);return o}
+function perPart(A,c){var o=c.per&&c.per[A.part.id];if(!o)return c;var q={};for(var k in c)q[k]=c[k];for(var k2 in o)q[k2]=o[k2];q.auto=false;return q}
+function cutLen(lines){var L=0;lines.forEach(function(l){for(var i=1;i<l.length;i++)L+=Math.hypot(X(l[i])-X(l[i-1]),Y(l[i])-Y(l[i-1]))});return L}
+/* ENG MAQBUL VARIANT: har bir detal uchun oraliq va kesik enini tanlaydi.
+   Shartlar: buralish <= 1 %, tasmalar R ning 85 % dan oldin tegmaydi (t*p/eni <= 0.85 R), tasma eni p - eni >= 1.4 mm.
+   Shartga mos variantlar ichidan eng katta oraliq (kam kesik: mustahkam va tez kesiladi), keyin eng tor kesik olinadi. */
+function optimize(A,c){
+ var t=A.part.thickness||3,kind=LAT[c.kind]?'straight':c.kind,best=null,fall=null;
+ if(!A.R)return{pitch:3,w:1,kind:kind,ok:null,why:'radius nomaʼlum — 3 mm fanerga umumiy tavsiya'};
+ [5,4,3.5,3,2.5,2,1.6].forEach(function(p){if(p>Math.max(1.6,A.R/6))return;
+  [0.2,0.3,0.4,0.5,0.6,0.8,1,1.2,1.5].forEach(function(w){if(p-w<1.4)return;
+   var cc={};for(var k in c)cc[k]=c[k];cc.kind=kind;cc.pitch=p;cc.w=w;cc.auto=false;cc.per=null;cc.grad='none';
+   var r=rebuild(A,cc);if(!r.n)return;var g=r.g==null?0:r.g,rt=t*p/Math.max(w,c.kerf||.2);
+   var bad=Math.max(g/1.0,rt/(.85*A.R));var cand={pitch:p,w:w,kind:kind,g:g,rt:rt,n:r.n,len:cutLen(r.lines),ok:bad<=1};
+   if(cand.ok){if(!best||p>best.pitch||(p===best.pitch&&w<best.w))best=cand}
+   else if(!fall||bad<fall.bad){cand.bad=bad;fall=cand}})});
+ var o=best||fall;if(!o)return{pitch:1.6,w:.2,kind:kind,ok:false,why:'detal juda kichik'};
+ o.why=best?'buralish '+o.g.toFixed(2)+'%, tasmalar R '+o.rt.toFixed(0)+' da tegadi (detal R '+A.R.toFixed(0)+')':'shartga to‘liq mos variant yo‘q — eng yaqini; radiusni kattalashtiring yoki yupqaroq faner oling';
+ return o}
 function rebuild(A,c){
+ c=perPart(A,c);
  if(LAT[c.kind])return latBuild(A,c);
  var out=[],e=c.edge,col=0,lens=[],cols=[];
  var span=A.mode==='r'?A.r1-A.r0:(A.mode==='v'?A.bb.y1-A.bb.y0:A.bb.x1-A.bb.x0),Lb=Math.max(5,span-2*e);
@@ -11127,16 +11146,16 @@ var m=document.createElement('div');m.id='lmFx';m.innerHTML='<div class=bx><h3>�
 '<div class=row>Zichlik gradienti <select id=lmFxGr><option value=none>bir xil</option><option value=center>markazda zich</option><option value=edges>chetlarda zich</option></select><label>kuchi <input type=number id=lmFxGk min=0 max=0.8 step=0.05></label><span class=mu>egilish zich joyda to‘planadi</span></div>'+
 '<div class=row>Bezak teshiklar <select id=lmFxD><option value=none>— yo‘q —</option><option value=grid>To‘r (har tasmada nuqtalar)</option><option value=sine>To‘lqin</option><option value=double>Qo‘sh to‘lqin (zanjir)</option><option value=chain>Ikki qator oval</option><option value=diamond>Romb / X panjara</option><option value=rings>Halqalar</option></select><select id=lmFxDs><option value=circle>doira</option><option value=diamond>romb</option></select><label>O‘lchami <input type=number id=lmFxDd min=0.6 max=4 step=0.1> mm</label><label>Naqsh davri <input type=number id=lmFxDp min=0 max=400 step=1> mm</label><span class=mu>0 — avtomatik</span></div>'+
 '<div class=row><button id=lmFxAll>Hammasini belgilash</button><button id=lmFxNone>Hech birini</button><span class=mu>Belgilangan detallar qayta ishlanadi, qolganlari asl holicha qoladi.</span></div>'+
-'<div class=cols><div id=lmFxL></div><canvas id=lmFxC></canvas></div>'+
-'<div class=row><button class=pri id=lmFxGo>Qo‘llash</button><button id=lmFxOff>Asl holiga qaytarish</button><span class=mu id=lmFxS></span><span style=flex:1></span><button id=lmFxX>Yopish</button></div></div>';
+'<div id=lmFxO class=mu style="display:none;margin:6px 0;padding:8px 10px;background:#fbf1d4;border-radius:8px;color:#1d1b17"></div><div class=cols><div id=lmFxL></div><canvas id=lmFxC></canvas></div>'+
+'<div class=row><button id=lmFxBest title="Har bir detal uchun eng maqbul oraliq va kesik enini hisoblab beradi">✨ Eng maqbulini taklif qilish</button><button class=pri id=lmFxGo>Qo‘llash</button><button id=lmFxOff>Asl holiga qaytarish</button><span class=mu id=lmFxS></span><span style=flex:1></span><button id=lmFxX>Yopish</button></div></div>';
 document.body.appendChild(m);
 function $(q){return m.querySelector(q)}
 var C=null,G=null,FP=[],curIx=0;
 function readUI(){C.on=$('#lmFxOn').checked;C.kind=$('#lmFxK').value;C.pitch=+$('#lmFxP').value||4;C.auto=$('#lmFxA').checked;C.w=Math.max(0,+$('#lmFxW').value||0);C.kerf=+$('#lmFxKf').value||.2;C.hole=Math.max(0,+$('#lmFxH').value||0);C.edge=Math.max(1.5,+$('#lmFxE').value||3.2);C.amp=+$('#lmFxAm').value||1.8;C.wave=+$('#lmFxWv').value||20;C.deco=$('#lmFxD').value;C.dsh=$('#lmFxDs').value;C.dd=+$('#lmFxDd').value||1.4;C.dper=Math.max(0,+$('#lmFxDp').value||0);C.seg=+$('#lmFxSg').value||22;C.br=+$('#lmFxBr').value||3;C.grad=$('#lmFxGr').value;C.gk=+$('#lmFxGk').value||0}
 function writeUI(){$('#lmFxOn').checked=!!C.on;$('#lmFxK').value=C.kind;$('#lmFxP').value=C.pitch;$('#lmFxA').checked=!!C.auto;$('#lmFxW').value=C.w;$('#lmFxKf').value=C.kerf||.2;$('#lmFxH').value=C.hole;$('#lmFxE').value=C.edge;$('#lmFxAm').value=C.amp;$('#lmFxWv').value=C.wave;$('#lmFxD').value=C.deco||'none';$('#lmFxDs').value=C.dsh||'circle';$('#lmFxDd').value=C.dd||1.4;$('#lmFxDp').value=C.dper||0;$('#lmFxSg').value=C.seg||22;$('#lmFxBr').value=C.br||3;$('#lmFxGr').value=C.grad||'none';$('#lmFxGk').value=C.gk==null?.5:C.gk;$('#lmFxP').disabled=false}
-function list(){var h='<table><tr><th></th><th>Detal</th><th>Radius</th><th>Oraliq</th><th>Eni</th><th>Kesiklar</th><th>Buralish</th><th>Tegish R</th></tr>';
+function list(){var h='<table><tr><th></th><th>Detal</th><th>Radius</th><th>Oraliq</th><th>Eni</th><th>Kesiklar</th><th>Buralish</th><th>Tegish R</th></tr>';var PR=C.per||{};
  FP.forEach(function(A,i){var r=rebuild(A,C),on=!(C.sel&&C.sel[A.part.id]===false),g=r.g;
-  h+='<tr data-i='+i+(i===curIx?' class=cur':'')+'><td><input type=checkbox data-id="'+String(A.part.id).replace(/"/g,'')+'"'+(on?' checked':'')+'></td><td>'+(A.part.id)+' — '+String(A.part.name||'').replace(/</g,'&lt;')+'</td><td>'+(A.R?A.R.toFixed(1):'—')+'</td><td>'+r.pitch+'</td><td>'+(r.sw!=null?r.sw:'—')+'</td><td>'+r.n+'</td><td>'+(g==null?'<span class=mu>R nomaʼlum</span>':'<span class='+(g<=1.5?'ok':'bad')+'>'+g.toFixed(2)+'%</span>')+'</td><td>'+(r.rc==null?'—':(A.R?'<span class='+(r.rc<=A.R?'ok':'bad')+'>'+r.rc.toFixed(0)+'</span>':r.rc.toFixed(0)))+'</td></tr>'});
+  h+='<tr data-i='+i+(i===curIx?' class=cur':'')+'><td>'+(PR[A.part.id]?'<span title="tavsiya qilingan">★</span>':'')+'<input type=checkbox data-id="'+String(A.part.id).replace(/"/g,'')+'"'+(on?' checked':'')+'></td><td>'+(A.part.id)+' — '+String(A.part.name||'').replace(/</g,'&lt;')+'</td><td>'+(A.R?A.R.toFixed(1):'—')+'</td><td>'+r.pitch+'</td><td>'+(r.sw!=null?r.sw:'—')+'</td><td>'+r.n+'</td><td>'+(g==null?'<span class=mu>R nomaʼlum</span>':'<span class='+(g<=1.5?'ok':'bad')+'>'+g.toFixed(2)+'%</span>')+'</td><td>'+(r.rc==null?'—':(A.R?'<span class='+(r.rc<=A.R?'ok':'bad')+'>'+r.rc.toFixed(0)+'</span>':r.rc.toFixed(0)))+'</td></tr>'});
  h+='</table>';$('#lmFxL').innerHTML=FP.length?h:'<p class=mu style=padding:10px>Bu maketda egiluvchan (kesikli) detal topilmadi.</p>';
  [].forEach.call($('#lmFxL').querySelectorAll('tr[data-i]'),function(tr){tr.onclick=function(ev){if(ev.target.tagName==='INPUT')return;curIx=+tr.dataset.i;list();draw()}});
  [].forEach.call($('#lmFxL').querySelectorAll('input[data-id]'),function(cb){cb.onchange=function(){C.sel=C.sel||{};C.sel[cb.dataset.id]=cb.checked}})}
@@ -11146,9 +11165,15 @@ function draw(){var cv=$('#lmFxC'),dpr=window.devicePixelRatio||1,W=cv.clientWid
  c.lineWidth=1;c.strokeStyle='#1d1b17';A.rs.forEach(function(r){pl(r,true)});
  var r=rebuild(A,C);c.strokeStyle='#c0392b';c.lineWidth=Math.max(.8,(r.sw&&r.sw>(C.kerf||.2)+.05?0:(C.kerf||.2))*s);(r.lines).forEach(function(l){pl(l,false)});
  c.fillStyle='#6d665a';c.font='12px system-ui';c.fillText(A.part.id+' · '+(bb.x1-bb.x0).toFixed(0)+' × '+(bb.y1-bb.y0).toFixed(0)+' mm · oraliq '+r.pitch+' mm · '+r.n+' kesik'+(r.sw!=null?' · eni '+r.sw+' mm':'')+(r.g!=null?' · buralish '+r.g.toFixed(2)+'%':'')+(r.rc!=null&&A.R&&r.rc>A.R?' · ⚠ tasmalar R '+r.rc.toFixed(0)+' da tegadi — enini oshiring':'')+(r.warn?' · ⚠ '+r.warn:''),10,H-6)}
-function refresh(){readUI();list();draw()}
+function refresh(ev){if(ev&&ev.target&&/lmFx(P|W|A|K)$/.test(ev.target.id)&&C.per){C.per=null;$('#lmFxO').style.display='none'}readUI();list();draw()}
 ['#lmFxK','#lmFxP','#lmFxA','#lmFxW','#lmFxKf','#lmFxH','#lmFxE','#lmFxAm','#lmFxWv','#lmFxOn','#lmFxD','#lmFxDs','#lmFxDd','#lmFxDp','#lmFxSg','#lmFxBr','#lmFxGr','#lmFxGk'].forEach(function(q){$(q).oninput=refresh;$(q).onchange=refresh});
 $('#lmFxAll').onclick=function(){C.sel={};list()};$('#lmFxNone').onclick=function(){C.sel={};FP.forEach(function(A){C.sel[A.part.id]=false});list()};
+$('#lmFxBest').onclick=function(){readUI();if(!FP.length)return;var per={},rows=[],sw=false;if(LAT[C.kind]){C.kind='straight';$('#lmFxK').value='straight';sw=true}
+ FP.forEach(function(A){if(C.sel&&C.sel[A.part.id]===false)return;var o=optimize(A,C);per[A.part.id]={pitch:o.pitch,w:o.w,kind:o.kind};
+  rows.push('<b>'+A.part.id+'</b>: oraliq '+o.pitch+' mm, eni '+o.w+' mm'+(o.n?', '+o.n+' kesik, '+(o.len/1000).toFixed(2)+' m':'')+' — '+(o.ok===false?'<span class=bad>':'')+o.why+(o.ok===false?'</span>':''))});
+ C.per=per;C.grad='none';$('#lmFxGr').value='none';
+ var o=$('#lmFxO');o.style.display='block';o.innerHTML='<b>✨ Tavsiya</b> — har bir detal uchun alohida: kesiklar chetdan chetga, buralish ≤ 1 %, tasmalar egilganda bir-biriga tegmaydi; shu shartlarda eng kam kesik (mustahkam va tez kesiladi).'+(sw?' Panjara naqshi 3 mm da ishonchsiz, shuning uchun to‘g‘ri kesikka o‘tkazildi.':'')+'<br>'+rows.join('<br>')+'<br><i>Ma’qul bo‘lsa «Qo‘llash» ni bosing. Oraliq yoki enini qo‘lda o‘zgartirsangiz, tavsiya bekor bo‘ladi.</i>';
+ list();draw()};
 $('#lmFxGo').onclick=function(){readUI();C.on=true;$('#lmFxOn').checked=true;save(G.id,C);bump();$('#lmFxS').textContent='Qo‘llandi — 3D, listlar va eksport yangilandi';};
 $('#lmFxOff').onclick=function(){C.on=false;$('#lmFxOn').checked=false;save(G.id,C);bump();$('#lmFxS').textContent='Asl kesiklar qaytarildi'};
 $('#lmFxX').onclick=function(){m.style.display='none'};m.onclick=function(e){if(e.target===m)m.style.display='none'};
