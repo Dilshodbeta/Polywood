@@ -11257,7 +11257,95 @@ function open(){wrapAll();G=gen();if(!G){alert('Avval generatorni tanlang');retu
  FP=flexParts(model);curIx=0;writeUI();$('#lmFxG').textContent=(G.name||G.id)+' · egiluvchan detallar: '+FP.length;$('#lmFxS').textContent='';m.style.display='flex';list();setTimeout(draw,30)}
 window.__lmFlex=open;window.__lmFlexApi={analyze:analyze,rebuild:rebuild,applyFlex:applyFlex,cfg:cfg};
 function add(){if(document.getElementById('lmFlexBtn'))return;var t=document.getElementById('lmSellBtn')||document.getElementById('lmMarkBtn');if(!t)return;var b=document.createElement('button');b.id='lmFlexBtn';b.type='button';b.className=t.className;b.textContent='〰 Egiluvchan qism';b.title='Egiluvchan qoplama detallari: kesiklar orasi, chiziq eni, teshik va naqsh';b.onclick=open;t.parentNode.insertBefore(b,t.nextSibling)}setInterval(add,900);
-})();</script><script id=lm-nest>(function(){
+})();</script><script id=lm-qpic>(function(){
+/* LaserMaket: tayyor maket detaliga fayldan rasm qo'yish (gravyura kontur / to'ldirib gravyura / kesib o'yish) */
+var K='lmQp:';
+function st(){return window.__lmStore&&window.__lmStore.getState()}
+function gens(){return window.__lmGens||[]}
+function gen(){var s=st();return s&&gens().find(function(g){return g.id===s.generatorId})}
+function load(id){try{return JSON.parse(localStorage.getItem(K+id)||'[]')||[]}catch(e){return[]}}
+function save(id,a){try{localStorage.setItem(K+id,JSON.stringify(a));return true}catch(e){alert('Brauzer xotirasi to‘ldi: rasmni kichikroq yoki soddaroq qiling');return false}}
+function X(p){return p.x!==undefined?p.x:p[0]}function Y(p){return p.y!==undefined?p.y:p[1]}
+function P(x,y){return{x:x,y:y}}
+function pip(poly,x,y){var c=false;for(var i=0,j=poly.length-1;i<poly.length;j=i++){var xi=X(poly[i]),yi=Y(poly[i]),xj=X(poly[j]),yj=Y(poly[j]);if((yi>y)!==(yj>y)&&x<(xj-xi)*(y-yi)/(yj-yi)+xi)c=!c}return c}
+function bbox(poly){var a=1e9,b=1e9,c=-1e9,d=-1e9;poly.forEach(function(p){var x=X(p),y=Y(p);if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y});return{x0:a,y0:b,x1:c,y1:d}}
+/* ---------- rasm -> vektor (piksel koordinatalarida, y pastga) */
+function toMask(img,maxW,thr,inv){var w=Math.min(maxW,img.width),h=Math.max(1,Math.round(img.height*w/img.width));var cv=document.createElement('canvas');cv.width=w;cv.height=h;var c=cv.getContext('2d');c.fillStyle='#fff';c.fillRect(0,0,w,h);c.drawImage(img,0,0,w,h);var d=c.getImageData(0,0,w,h).data,m=new Uint8Array(w*h);
+ for(var i=0;i<w*h;i++){var a=d[4*i+3]/255,l=(0.299*d[4*i]+0.587*d[4*i+1]+0.114*d[4*i+2])*a+255*(1-a),on=l<thr;m[i]=inv?!on:on}return{w:w,h:h,m:m}}
+function contours(M){ // marching squares -> yopiq polilinlar
+ var w=M.w,h=M.h,g=function(x,y){return x>=0&&y>=0&&x<w&&y<h&&M.m[y*w+x]?1:0},segs=[];
+ for(var y=-1;y<h;y++)for(var x=-1;x<w;x++){var a=g(x,y),b=g(x+1,y),c=g(x+1,y+1),d=g(x,y+1),k=a*8+b*4+c*2+d;if(k===0||k===15)continue;
+  var T=[x+1,y+.5],R=[x+1.5,y+1],B=[x+1,y+1.5],L=[x+.5,y+1];
+  var t={1:[[L,B]],2:[[B,R]],3:[[L,R]],4:[[T,R]],5:[[L,T],[B,R]],6:[[T,B]],7:[[L,T]],8:[[L,T]],9:[[T,B]],10:[[T,R],[L,B]],11:[[T,R]],12:[[L,R]],13:[[B,R]],14:[[L,B]]}[k];
+  t.forEach(function(s){segs.push(s)})}
+ var key=function(p){return p[0]+','+p[1]},map={};segs.forEach(function(s,i){[0,1].forEach(function(e){var kk=key(s[e]);(map[kk]=map[kk]||[]).push(i)})});
+ var used=new Uint8Array(segs.length),out=[];
+ for(var i=0;i<segs.length;i++){if(used[i])continue;used[i]=1;var line=[segs[i][0],segs[i][1]],go=true;
+  while(go){go=false;var e=key(line[line.length-1]),cand=map[e]||[];for(var j=0;j<cand.length;j++){var q=cand[j];if(used[q])continue;used[q]=1;var s=segs[q];line.push(key(s[0])===e?s[1]:s[0]);go=true;break}}
+  if(line.length>3){var cl=key(line[0])===key(line[line.length-1]),mid=line.length>>1;out.push(cl?rdp(line.slice(0,mid+1),0.6).slice(0,-1).concat(rdp(line.slice(mid),0.6)):rdp(line,0.6))}}
+ return out}
+function rdp(pts,eps){if(pts.length<3)return pts;var a=pts[0],b=pts[pts.length-1],dm=0,ix=0,dx=b[0]-a[0],dy=b[1]-a[1],L=Math.hypot(dx,dy)||1;
+ for(var i=1;i<pts.length-1;i++){var d=Math.abs(dy*pts[i][0]-dx*pts[i][1]+b[0]*a[1]-b[1]*a[0])/L;if(d>dm){dm=d;ix=i}}
+ if(dm>eps){var l=rdp(pts.slice(0,ix+1),eps),r=rdp(pts.slice(ix),eps);return l.slice(0,-1).concat(r)}return[a,b]}
+function hatch(M,stepPx){var out=[];for(var yy=0.5;yy<M.h;yy+=stepPx){var y=Math.floor(yy),run=-1,dir=(Math.round(yy/stepPx)%2);
+  for(var x=0;x<=M.w;x++){var on=x<M.w&&M.m[y*M.w+x];if(on&&run<0)run=x;if(!on&&run>=0){out.push(dir?[[x,yy],[run,yy]]:[[run,yy],[x,yy]]);run=-1}}}return out}
+/* ---------- joylash: piksel -> detal koordinatasi (mm) */
+function place(it,part){var o=part.regions&&part.regions[0]&&part.regions[0].outer;if(!o)return[];var bb=bbox(o),cx=(bb.x0+bb.x1)/2+(+it.dx||0),cy=(bb.y0+bb.y1)/2+(+it.dy||0),s=it.wmm/it.pw,a=(+it.rot||0)*Math.PI/180,ca=Math.cos(a),sa=Math.sin(a);
+ var tf=function(p){var x=(p[0]-it.pw/2)*s,y=-(p[1]-it.ph/2)*s;return P(cx+x*ca-y*sa,cy+x*sa+y*ca)};
+ var res=[];it.lines.forEach(function(l){var q=l.map(tf),cur=[];q.forEach(function(p){if(pip(o,X(p),Y(p))){cur.push(p)}else{if(cur.length>1)res.push(cur);cur=[]}});if(cur.length>1)res.push(cur)});
+ if(it.mode==='cut')res=res.filter(function(l){return l.length>3&&Math.hypot(X(l[0])-X(l[l.length-1]),Y(l[0])-Y(l[l.length-1]))<.6});
+ return res}
+function applyImg(id,model){var A=load(id);if(!A.length||!model||!model.parts)return model;
+ var parts=model.parts.map(function(pt){var mine=A.filter(function(it){return it.on!==false&&it.part===pt.id});if(!mine.length)return pt;var q={};for(var k in pt)q[k]=pt[k];
+  q.engraveLines=(pt.engraveLines||[]).slice();q.cutLines=(pt.cutLines||[]).slice();
+  mine.forEach(function(it){var L=place(it,pt);if(it.mode==='cut')q.cutLines=q.cutLines.concat(L);else q.engraveLines=q.engraveLines.concat(L)});
+  q.info=(pt.info||[]).concat([{label:'Rasm',value:mine.map(function(it){return it.name+' ('+({line:'kontur gravyura',fill:'to‘ldirib gravyura',cut:'kesib o‘yish'})[it.mode]+', '+it.wmm+' mm)'}).join('; ')}]);return q});
+ var o={};for(var k in model)o[k]=model[k];o.parts=parts;return o}
+function wrapAll(){gens().forEach(function(g){if(!g||g.__qpOrig||typeof g.generate!=='function')return;var orig=g.generate;g.__qpOrig=orig;g.generate=function(p){var r=orig.apply(this,arguments);try{return applyImg(g.id,r)}catch(e){console.warn('lm-img',e);return r}}})}
+setInterval(wrapAll,1000);setTimeout(wrapAll,300);
+function bump(){var s=window.__lmStore,S=st();if(!s||!S)return;var id=S.generatorId,pb=S.paramsById||{},cur=pb[id]||{},np={};for(var k in cur)np[k]=cur[k];np.__qp=Date.now();var npb={};for(var k2 in pb)npb[k2]=pb[k2];npb[id]=np;s.setState({paramsById:npb})}
+/* ---------- UI */
+var css=document.createElement('style');css.textContent='#lmQp{position:fixed;inset:0;z-index:9999;background:#0008;display:none;align-items:center;justify-content:center;padding:12px}#lmQp .bx{background:#fffdf8;color:#1d1b17;width:min(1000px,100%);max-height:94vh;overflow:auto;border-radius:14px;padding:16px;font:13px/1.45 system-ui,sans-serif}#lmQp h3{margin:0 0 4px;font-size:16px}#lmQp .mu{color:#6d665a;font-size:12px}#lmQp .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}#lmQp select,#lmQp input[type=number]{font:inherit;padding:4px 6px;border:1px solid #d8cfbe;border-radius:7px;background:#fff;color:#1d1b17;width:auto;max-width:320px}#lmQp input[type=number]{width:72px}#lmQp button{font:inherit;border:1px solid #d8cfbe;background:#fff;color:#1d1b17;border-radius:8px;padding:7px 12px;cursor:pointer}#lmQp .pri{background:#e2a812;border-color:#e2a812;font-weight:700}#lmQp .cols{display:flex;gap:12px;flex-wrap:wrap}#lmQpC{flex:1 1 520px;min-width:280px;height:380px;border:1px solid #e3dccd;border-radius:8px;background:#fff}#lmQpL{flex:1 1 300px;max-height:380px;overflow:auto}#lmQpL .it{border:1px solid #e3dccd;border-radius:8px;padding:6px 8px;margin-bottom:6px;background:#fff}#lmQp label{white-space:nowrap}';document.head.appendChild(css);
+var m=document.createElement('div');m.id='lmQp';m.innerHTML='<div class=bx><h3>🖼 Rasm qo‘yish</h3><p class=mu style=margin:0>Tayyor maketning istalgan detaliga rasm (PNG, JPG, SVG) yuklang: u vektorga aylantiriladi va detal ichiga joylanadi. Detal chegarasidan chiqqan qismi qirqiladi. Natija 3D, listlar va SVG/DXF/PDF eksportiga tushadi.</p>'+
+'<div class=row><label>Detal <select id=lmQpP></select></label><label>Fayl <input type=file id=lmQpF accept="image/png,image/jpeg,image/svg+xml,image/webp,image/gif"></label></div>'+
+'<div class=row><label>Usul <select id=lmQpM><option value=line>Kontur gravyura (chiziq)</option><option value=fill>To‘ldirib gravyura (shtrix)</option><option value=cut>Kesib o‘yish (teshik)</option></select></label><label>Eni <input type=number id=lmQpW min=5 max=600 step=1> mm</label><label>Siljish X <input type=number id=lmQpX step=1> Y <input type=number id=lmQpY step=1> mm</label><label>Burish <input type=number id=lmQpR step=5>°</label></div>'+
+'<div class=row><label>Chegara (qora/oq) <input type=range id=lmQpT min=20 max=235 step=1></label><label><input type=checkbox id=lmQpI> negativ</label><label>Aniqlik <select id=lmQpQ><option value=160>past</option><option value=280 selected>o‘rta</option><option value=420>yuqori</option></select></label><label>Shtrix oralig‘i <input type=number id=lmQpS min=0.1 max=2 step=0.05> mm</label><span class=mu id=lmQpN></span></div>'+
+'<div class=cols><canvas id=lmQpC></canvas><div id=lmQpL></div></div>'+
+'<div class=row><button class=pri id=lmQpAdd>Detalga qo‘shish</button><button id=lmQpGo>Qo‘llash</button><span class=mu id=lmQpSt></span><span style=flex:1></span><button id=lmQpX2>Yopish</button></div></div>';
+document.body.appendChild(m);
+function $(q){return m.querySelector(q)}
+var G=null,MODEL=null,IMG=null,IMGNAME='',CUR=null,LIST=[];
+function partById(id){return MODEL&&MODEL.parts.find(function(p){return p.id===id})}
+function build(){if(!IMG){CUR=null;return}var M=toMask(IMG,+$('#lmQpQ').value,+$('#lmQpT').value,$('#lmQpI').checked),mode=$('#lmQpM').value,wmm=+$('#lmQpW').value||60,lines;
+ if(mode==='fill'){var sp=Math.max(.1,+$('#lmQpS').value||.3);lines=hatch(M,sp*M.w/wmm)}else lines=contours(M);
+ CUR={name:IMGNAME,part:$('#lmQpP').value,mode:mode,wmm:wmm,pw:M.w,ph:M.h,dx:+$('#lmQpX').value||0,dy:+$('#lmQpY').value||0,rot:+$('#lmQpR').value||0,lines:lines.map(function(l){return l.map(function(p){return[Math.round(p[0]*10)/10,Math.round(p[1]*10)/10]})}),on:true};
+ $('#lmQpN').textContent=lines.length+' ta chiziq'+(mode==='cut'?' (faqat yopiq konturlar kesiladi)':'')}
+function draw(){var cv=$('#lmQpC'),dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+ var pt=partById($('#lmQpP').value);if(!pt||!pt.regions||!pt.regions[0])return;var o=pt.regions[0].outer,bb=bbox(o),s=Math.min((W-20)/(bb.x1-bb.x0||1),(H-30)/(bb.y1-bb.y0||1)),ox=10-bb.x0*s+((W-20)-(bb.x1-bb.x0)*s)/2,oy=H-20+bb.y0*s-((H-30)-(bb.y1-bb.y0)*s)/2;
+ function pl(l,cl,col,lw){c.beginPath();l.forEach(function(p,i){var x=ox+X(p)*s,y=oy-Y(p)*s;i?c.lineTo(x,y):c.moveTo(x,y)});if(cl)c.closePath();c.strokeStyle=col;c.lineWidth=lw;c.stroke()}
+ c.fillStyle='#f1e3c8';c.beginPath();o.forEach(function(p,i){var x=ox+X(p)*s,y=oy-Y(p)*s;i?c.lineTo(x,y):c.moveTo(x,y)});c.closePath();c.fill();
+ pl(o,true,'#1d1b17',1);(pt.regions[0].holes||[]).forEach(function(h){pl(h,true,'#1d1b17',1)});(pt.cutLines||[]).forEach(function(l){pl(l,false,'#c0392b',.8)});
+ LIST.filter(function(it){return it.part===pt.id&&it.on!==false}).concat(CUR&&CUR.part===pt.id?[CUR]:[]).forEach(function(it){place(it,pt).forEach(function(l){pl(l,false,it.mode==='cut'?'#c0392b':'#1f5fbf',it===CUR?1.1:.8)})});
+ c.fillStyle='#6d665a';c.font='12px system-ui';c.fillText(pt.id+' — '+(pt.name||'')+' · '+(bb.x1-bb.x0).toFixed(0)+' × '+(bb.y1-bb.y0).toFixed(0)+' mm',10,H-6)}
+function list(){var h='';LIST.forEach(function(it,i){h+='<div class=it><b>'+String(it.name).replace(/</g,'&lt;')+'</b> → '+it.part+'<br><span class=mu>'+({line:'kontur gravyura',fill:'to‘ldirib gravyura',cut:'kesib o‘yish'})[it.mode]+', eni '+it.wmm+' mm, '+it.lines.length+' chiziq</span><br><label><input type=checkbox data-on='+i+(it.on!==false?' checked':'')+'> yoqilgan</label> <button data-del='+i+'>O‘chirish</button></div>'});
+ $('#lmQpL').innerHTML=h||'<p class=mu>Hali rasm qo‘shilmagan. Detalni tanlang, fayl yuklang va «Detalga qo‘shish» ni bosing.</p>';
+ [].forEach.call($('#lmQpL').querySelectorAll('[data-del]'),function(b){b.onclick=function(){LIST.splice(+b.dataset.del,1);list();draw()}});
+ [].forEach.call($('#lmQpL').querySelectorAll('[data-on]'),function(b){b.onchange=function(){LIST[+b.dataset.on].on=b.checked;draw()}})}
+function refresh(){build();draw()}
+['#lmQpM','#lmQpW','#lmQpX','#lmQpY','#lmQpR','#lmQpT','#lmQpI','#lmQpQ','#lmQpS'].forEach(function(q){$(q).oninput=refresh;$(q).onchange=refresh});
+$('#lmQpP').onchange=function(){var pt=partById($('#lmQpP').value);if(pt&&pt.regions&&pt.regions[0]){var bb=bbox(pt.regions[0].outer);$('#lmQpW').value=Math.round(Math.min(bb.x1-bb.x0,bb.y1-bb.y0)*0.6)}refresh()};
+$('#lmQpF').onchange=function(){var f=this.files&&this.files[0];if(!f)return;IMGNAME=f.name;var rd=new FileReader();rd.onload=function(){var im=new Image();im.onload=function(){IMG=im;refresh()};im.onerror=function(){alert('Rasmni ochib bo‘lmadi')};im.src=rd.result};rd.readAsDataURL(f)};
+$('#lmQpAdd').onclick=function(){build();if(!CUR){alert('Avval rasm faylini tanlang');return}if(!CUR.lines.length){alert('Rasmdan chiziq chiqmadi: chegarani o‘zgartiring yoki «negativ» ni yoqing');return}LIST.push(CUR);CUR=null;$('#lmQpF').value='';IMG=null;list();draw();$('#lmQpSt').textContent='Qo‘shildi — «Qo‘llash» ni bosing'};
+$('#lmQpGo').onclick=function(){if(CUR&&IMG&&confirm('Tanlangan rasm hali qo‘shilmagan. Uni ham qo‘shaymi?'))$('#lmQpAdd').onclick();if(save(G.id,LIST)){bump();$('#lmQpSt').textContent='Qo‘llandi — 3D, listlar va eksport yangilandi'}};
+$('#lmQpX2').onclick=function(){m.style.display='none'};m.onclick=function(e){if(e.target===m)m.style.display='none'};
+function open(){wrapAll();G=gen();if(!G){alert('Avval generatorni tanlang');return}var S=st();MODEL=null;try{MODEL=(G.__qpOrig||G.generate).call(G,S.paramsById[S.generatorId])}catch(e){}
+ if(!MODEL||!MODEL.parts||!MODEL.parts.length){alert('Maket detallari topilmadi');return}LIST=load(G.id);IMG=null;CUR=null;$('#lmQpF').value='';
+ $('#lmQpP').innerHTML=MODEL.parts.filter(function(p){return p.regions&&p.regions[0]}).map(function(p){var bb=bbox(p.regions[0].outer);return'<option value="'+String(p.id).replace(/"/g,'')+'">'+String(p.id).replace(/</g,'')+' — '+String(p.name||'').replace(/</g,'&lt;')+' ('+(bb.x1-bb.x0).toFixed(0)+'×'+(bb.y1-bb.y0).toFixed(0)+')</option>'}).join('');
+ $('#lmQpT').value=128;$('#lmQpS').value=.3;$('#lmQpX').value=0;$('#lmQpY').value=0;$('#lmQpR').value=0;$('#lmQpP').onchange();$('#lmQpSt').textContent='';m.style.display='flex';list();setTimeout(draw,30)}
+window.__lmQp=open;window.__lmQpApi={toMask:toMask,contours:contours,hatch:hatch,place:place,applyImg:applyImg};
+function add(){if(document.getElementById('lmQpBtn'))return;var t=document.getElementById('lmFlexBtn')||document.getElementById('lmSellBtn');if(!t)return;var b=document.createElement('button');b.id='lmQpBtn';b.type='button';b.className=t.className;b.textContent='🖼 Rasm qo‘yish';b.title='Tayyor maket detaliga fayldan rasm qo‘yish (gravyura yoki kesik)';b.onclick=open;t.parentNode.insertBefore(b,t.nextSibling)}setInterval(add,900);
+})();</script>
+<script id=lm-nest>(function(){
 /* LaserMaket: avtomatik zich joylash (raster true-shape nesting, fon oqimida) */
 var NEST_SRC=function(){
 function rasterRows(polys,r){
