@@ -11566,4 +11566,98 @@ if(L!=='uz'){var start=function(){walk(document.body);new MutationObserver(funct
 function sw(){if(document.getElementById('lmLangSel'))return;if(!document.body)return;var s=document.createElement('select');s.id='lmLangSel';s.title='Til / Language / Язык';s.style.cssText='position:fixed;top:6px;right:8px;z-index:9998;width:auto;height:22px;padding:0 2px 0 4px;border-radius:6px;border:1px solid rgba(255,255,255,.35);font:600 11px/20px system-ui,sans-serif;background:rgba(20,18,14,.55);color:#fff;cursor:pointer;opacity:.85';s.innerHTML='<option value=uz>🌐 UZ</option><option value=en>🌐 EN</option><option value=ru>🌐 RU</option>';s.value=L;s.onmouseenter=function(){s.style.opacity='1'};s.onmouseleave=function(){s.style.opacity='.85'};s.onchange=function(){try{localStorage.setItem('lmLang',s.value)}catch(e){}location.reload()};[].forEach.call(s.options,function(o){o.style.color='#1d1b17';o.style.background='#fff'});document.body.appendChild(s);var hd=document.querySelector('header')||document.querySelector('.lmh-open')&&document.querySelector('.lmh-open').closest('header,div');if(hd&&hd.tagName==='HEADER'){var pr=parseFloat(getComputedStyle(hd).paddingRight)||0;pr<74&&(hd.style.paddingRight='74px')}}setInterval(sw,900);
 })();
 </script></body></html>
-</body></html>
+<script id="lm-ux">(function(){if(window.__lmUX)return;window.__lmUX=1;
+var TOOLS=[['lmPaperBtn','Qog‘oz maketga o‘tkazish (yelim qanotli yoyilmalar)'],['lmSkinBtn','Maket ustiga qog‘oz qoplama yoyilmasi'],['lmImgBtn','Rasm yoki fotodan yangi maket'],['lmQpBtn','Tayyor detal yuziga rasm gravyurasi'],['lmFlexBtn','Egiluvchan kesik (living hinge) sozlash'],['lmNestBtn','Detallarni listga zichroq joylash'],['p3','3D printer uchun STL'],['lmMarkBtn','Muallif belgisi va yozuvi'],['lmSellBtn','Sotuv narxi va kartochka']];
+var PROJ=[['Loyihani saqlash','Joriy sozlamalarni faylga saqlash','Ctrl+S'],['Ochish','Saqlangan loyiha faylini ochish','Ctrl+O'],['Umumiy galereya','Boshqalar ulashgan maketlar',''],['Standart qiymatlar','Barcha parametrlarni boshlang‘ich holatga qaytarish','']];
+var css=`
+#lmPaperBtn,#lmSkinBtn,#lmImgBtn,#lmQpBtn,#lmFlexBtn,#lmNestBtn,#lmMarkBtn,#lmSellBtn,#lmGalBtn,.top-actions>.p3-btn,.top-actions>.lmux-h{display:none!important}
+.top-actions{align-items:center;flex-wrap:nowrap}
+.lmux-dd{position:relative}
+.lmux-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid #4a4d52;background:#2c2f33;color:#f1f2f3;font:600 13px/1 system-ui,sans-serif;cursor:pointer;white-space:nowrap}
+.lmux-btn:hover,.lmux-btn[aria-expanded=true]{background:#3a3e43;border-color:#6a6e74}
+.lmux-btn:focus-visible,.lmux-it:focus-visible,.lmux-more:focus-visible{outline:2px solid var(--accent,#e2a812);outline-offset:2px}
+.lmux-btn .car{font-size:10px;opacity:.7}
+.lmux-menu{position:absolute;right:0;top:calc(100% + 6px);z-index:9999;min-width:300px;max-width:min(380px,calc(100vw - 16px));background:#fffdf8;color:#1d1b17;border:1px solid #d8cfbe;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.22);padding:6px;display:none}
+.lmux-menu.on{display:block}
+.lmux-it{display:grid;grid-template-columns:1fr auto;gap:2px 10px;width:100%;text-align:left;background:none;border:0;border-radius:8px;padding:8px 10px;cursor:pointer;font:13px/1.35 system-ui,sans-serif;color:inherit}
+.lmux-it:hover,.lmux-it:focus{background:#f6efe0}
+.lmux-it b{font-weight:600}.lmux-it small{grid-column:1;color:#6d665a;font-size:12px}.lmux-it kbd{grid-row:1/3;grid-column:2;align-self:center;font:11px ui-monospace,monospace;color:#6d665a;border:1px solid #d8cfbe;border-radius:5px;padding:2px 5px;background:#fff}
+.lmux-sep{height:1px;background:#eee4d2;margin:4px 6px}
+#lmNestChip{left:calc(50% - 60px)!important;right:auto!important;bottom:auto!important;top:12px;transform:translateX(-50%);background:rgba(60,62,66,.95)!important;border:1px solid #6a6e74}
+.lmux-more{margin-top:6px;width:100%;padding:8px;border:1px dashed #d8cfbe;border-radius:8px;background:transparent;color:inherit;font:600 12.5px system-ui,sans-serif;cursor:pointer}
+.lmux-more:hover{background:rgba(226,168,18,.1)}
+.presets.lmux-c>.preset:nth-child(n+4){display:none}
+.lmux-split{grid-area:bottom;align-self:start;height:10px;margin-top:-5px;z-index:5;cursor:row-resize;position:relative;display:none}
+.lmux-split::before{content:'';position:absolute;left:50%;top:3px;width:48px;height:4px;margin-left:-24px;border-radius:3px;background:#c9bfae;transition:background .15s}
+.lmux-split:hover::before,.lmux-split.drag::before{background:var(--accent,#e2a812)}
+.lmux-tog{position:absolute;right:10px;top:-2px;height:20px;padding:0 8px;border-radius:10px;border:1px solid #d8cfbe;background:#fffdf8;font:600 11px system-ui,sans-serif;color:#6d665a;cursor:pointer}
+@media (width>=901px){.app{grid-template-rows:auto minmax(0,1fr) var(--lmuxB,320px)!important}.lmux-split{display:block}.bottom{overflow:auto}}
+@media (width<=900px){#lmNestChip{top:auto!important;bottom:58px!important}.top-actions{width:100%}.lmux-menu{position:fixed;left:8px;right:8px;top:auto;bottom:8px;max-width:none;max-height:75vh;overflow:auto}.lmux-btn{height:38px}.lmux-bd{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:9998}}
+@media (width<=520px){.top-actions .lmh-open{flex:1}.lmux-btn .lbl2{display:none}}
+.lmux-help{position:fixed;inset:0;z-index:10001;background:rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;padding:12px}
+.lmux-help>div{background:#fffdf8;color:#1d1b17;border-radius:14px;padding:16px 18px;width:min(420px,100%);font:13px/1.5 system-ui,sans-serif;box-shadow:0 16px 40px rgba(0,0,0,.3)}
+.lmux-help h3{margin:0 0 8px;font-size:16px}.lmux-help table{width:100%;border-collapse:collapse}.lmux-help td{padding:4px 0;border-bottom:1px solid #f0e7d6}.lmux-help td:first-child{white-space:nowrap;padding-right:12px}
+.lmux-help kbd{font:12px ui-monospace,monospace;border:1px solid #d8cfbe;border-radius:5px;padding:1px 6px;background:#fff}
+`;
+var st=document.createElement('style');st.id='lmux-css';st.textContent=css;document.head.appendChild(st);
+function bar(){return document.querySelector('.top-actions')}
+function byText(t){var b=bar();if(!b)return null;return [].find.call(b.querySelectorAll('button'),function(x){return x.textContent.trim()===t})}
+function tool(id){return id==='p3'?document.querySelector('.top-actions>.p3-btn'):document.getElementById(id)}
+var open=null;
+function close(){if(!open)return;open.m.classList.remove('on');open.b.setAttribute('aria-expanded','false');var bd=document.querySelector('.lmux-bd');bd&&bd.remove();var b=open.b;open=null;return b}
+function item(label,hint,key,fn){var it=document.createElement('button');it.type='button';it.className='lmux-it';it.setAttribute('role','menuitem');it.innerHTML='<b></b>'+(key?'<kbd>'+key+'</kbd>':'')+'<small></small>';it.querySelector('b').textContent=label;it.querySelector('small').textContent=hint;it.onclick=function(){var b=close();fn();b&&setTimeout(function(){},0)};return it}
+function fill(m,kind){m.innerHTML='';var n=0;
+ if(kind==='t'){TOOLS.forEach(function(t){var o=tool(t[0]);if(!o)return;n++;m.appendChild(item(o.textContent.trim(),t[1],'',function(){o.click()}))});
+  [].forEach.call(bar().querySelectorAll('button.lmh-open'),function(o){if(o.id&&TOOLS.some(function(t){return t[0]===o.id}))return;if(o===bar().querySelector('button.lmh-open'))return;n++;m.appendChild(item(o.textContent.trim(),'','',function(){o.click()}))})}
+ else{PROJ.forEach(function(p,i){var o=p[0]==='Umumiy galereya'?document.getElementById('lmGalBtn'):byText(p[0]);if(!o)return;if(i===2)m.appendChild(Object.assign(document.createElement('div'),{className:'lmux-sep'}));n++;m.appendChild(item(p[0],p[1],p[2],function(){o.click()}))});
+  m.appendChild(Object.assign(document.createElement('div'),{className:'lmux-sep'}));m.appendChild(item('Tezkor tugmalar','Klaviatura yorliqlari ro‘yxati','?',help))}
+ return n}
+function dd(kind,icon,label){var w=document.createElement('div');w.className='lmux-dd';w.dataset.k=kind;var b=document.createElement('button');b.type='button';b.className='lmux-btn';b.setAttribute('aria-haspopup','menu');b.setAttribute('aria-expanded','false');b.innerHTML='<span>'+icon+'</span><span class="lbl2"></span><span class="car">▼</span>';b.querySelector('.lbl2').textContent=label;b.title=label;b.setAttribute('aria-label',label);
+ var m=document.createElement('div');m.className='lmux-menu';m.setAttribute('role','menu');w.appendChild(b);w.appendChild(m);
+ b.onclick=function(e){e.stopPropagation();if(open&&open.m===m){close();return}close();fill(m,kind);m.classList.add('on');b.setAttribute('aria-expanded','true');open={m:m,b:b};
+  if(innerWidth<=900){var bd=document.createElement('div');bd.className='lmux-bd';bd.onclick=close;document.body.appendChild(bd)}
+  var f=m.querySelector('.lmux-it');f&&f.focus()};
+ m.addEventListener('keydown',function(e){var its=[].slice.call(m.querySelectorAll('.lmux-it')),i=its.indexOf(document.activeElement);if(e.key==='ArrowDown'){e.preventDefault();its[(i+1)%its.length].focus()}else if(e.key==='ArrowUp'){e.preventDefault();its[(i-1+its.length)%its.length].focus()}else if(e.key==='Escape'){var bb=close();bb&&bb.focus()}});
+ return w}
+function ensureBar(){var b=bar();if(!b)return;
+ [].forEach.call(b.children,function(x){if(x.tagName==='BUTTON'&&x.classList.contains('ghost')&&/^(Loyihani saqlash|Ochish|Standart qiymatlar)$/.test(x.textContent.trim()))x.classList.add('lmux-h')});
+ if(!b.querySelector('.lmux-dd[data-k=t]'))b.appendChild(dd('t','🛠','Asboblar'));
+ if(!b.querySelector('.lmux-dd[data-k=p]'))b.appendChild(dd('p','📁','Loyiha'));
+ var t=b.querySelector('.lmux-dd[data-k=t]'),p=b.querySelector('.lmux-dd[data-k=p]');if(b.lastElementChild!==p||p.previousElementSibling!==t){b.appendChild(t);b.appendChild(p)}}
+function ensurePresets(){[].forEach.call(document.querySelectorAll('.presets'),function(ps){var n=ps.querySelectorAll(':scope>.preset').length,mb=ps.nextElementSibling&&ps.nextElementSibling.classList.contains('lmux-more')?ps.nextElementSibling:null;
+ if(n<=4){ps.classList.remove('lmux-c');mb&&mb.remove();return}
+ if(!mb){mb=document.createElement('button');mb.type='button';mb.className='lmux-more';ps.classList.add('lmux-c');mb.onclick=function(){ps.classList.toggle('lmux-c');lab()};ps.after(mb)}
+ function lab(){mb.textContent=ps.classList.contains('lmux-c')?'Yana '+(n-3)+' ta namuna ▾':'Kamroq ko‘rsatish ▴';mb.setAttribute('aria-expanded',ps.classList.contains('lmux-c')?'false':'true')}lab()})}
+var B=320;try{B=+localStorage.getItem('lmuxB')||320}catch(e){}
+function setB(v,save){B=Math.max(44,Math.min(Math.round(innerHeight*.75),Math.round(v)));document.documentElement.style.setProperty('--lmuxB',B+'px');if(save)try{localStorage.setItem('lmuxB',B)}catch(e){}var tg=document.querySelector('.lmux-tog');tg&&(tg.textContent=B<=60?'▴ Listlarni ochish':'▾ Listlarni yashirish')}
+function ensureSplit(){var a=document.querySelector('.app');if(!a||a.querySelector(':scope>.lmux-split'))return;var s=document.createElement('div');s.className='lmux-split';s.title='Sudrab 3D va listlar o‘lchamini o‘zgartiring';s.setAttribute('role','separator');s.setAttribute('aria-orientation','horizontal');
+ var tg=document.createElement('button');tg.type='button';tg.className='lmux-tog';tg.onclick=function(e){e.stopPropagation();if(B<=60){var r=0;try{r=+localStorage.getItem('lmuxBo')||320}catch(x){}setB(r||320,1)}else{try{localStorage.setItem('lmuxBo',B)}catch(x){}setB(44,1)}fire()};s.appendChild(tg);
+ s.addEventListener('pointerdown',function(e){if(e.target===tg)return;e.preventDefault();s.setPointerCapture(e.pointerId);s.classList.add('drag');var y0=e.clientY,b0=B;
+  function mv(ev){setB(b0-(ev.clientY-y0));fire()}function up(){s.classList.remove('drag');s.removeEventListener('pointermove',mv);s.removeEventListener('pointerup',up);setB(B,1);fire()}
+  s.addEventListener('pointermove',mv);s.addEventListener('pointerup',up)});
+ s.addEventListener('dblclick',function(){setB(320,1);fire()});a.appendChild(s);setB(B)}
+var ft=0;function fire(){cancelAnimationFrame(ft);ft=requestAnimationFrame(function(){window.dispatchEvent(new Event('resize'))})}
+function help(){var h=document.createElement('div');h.className='lmux-help';h.innerHTML='<div role="dialog" aria-modal="true" aria-label="Tezkor tugmalar"><h3>Tezkor tugmalar</h3><table>'+
+ [['G','Barcha generatorlar katalogi'],['1 / 2 / 3','3D ko‘rinish / Chizmalar / Yig‘ish'],['Ctrl+S','Loyihani saqlash'],['Ctrl+O','Loyihani ochish'],['T','Asboblar menyusi'],['B','Pastki listlar panelini yig‘ish / ochish'],['Esc','Menyu yoki oynani yopish'],['?','Shu ro‘yxat']].map(function(r){return '<tr><td><kbd>'+r[0]+'</kbd></td><td>'+r[1]+'</td></tr>'}).join('')+
+ '</table><p style="margin:10px 0 0;color:#6d665a;font-size:12px">3D va listlar orasidagi chiziqni sudrab, maydonlar o‘lchamini o‘zgartirish mumkin (ikki marta bosish — asl holat).</p><div style="text-align:right;margin-top:10px"><button type="button" class="lmux-btn" style="background:#e2a812;border-color:#e2a812;color:#1d1b17">Yopish</button></div></div>';
+ function x(){h.remove();document.removeEventListener('keydown',k,true)}function k(e){if(e.key==='Escape'){e.stopPropagation();x()}}
+ h.onclick=function(e){if(e.target===h||e.target.tagName==='BUTTON')x()};document.addEventListener('keydown',k,true);document.body.appendChild(h);h.querySelector('button').focus()}
+function typing(e){var t=e.target;return t&&(t.isContentEditable||/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName))}
+window.addEventListener('keydown',function(e){var c=e.ctrlKey||e.metaKey;
+ if(c&&!e.shiftKey&&!e.altKey&&(e.key==='s'||e.key==='S')){var b=byText('Loyihani saqlash');if(b){e.preventDefault();b.click()}return}
+ if(c&&!e.shiftKey&&!e.altKey&&(e.key==='o'||e.key==='O')){var o=byText('Ochish');if(o){e.preventDefault();o.click()}return}
+ if(c||e.altKey||typing(e))return;
+ if(e.key==='Escape'){var bb=close();bb&&bb.focus();return}
+ if([].some.call(document.querySelectorAll('.lmux-help,[role=dialog][aria-modal=true]'),function(d){return d.getClientRects().length>0}))return;
+ var tabs=document.querySelectorAll('.center-tabs button');
+ if(/^[123]$/.test(e.key)&&tabs[+e.key-1]){tabs[+e.key-1].click();return}
+ if(e.key==='g'||e.key==='G'){var g=bar()&&bar().querySelector('button.lmh-open');g&&g.click();return}
+ if(e.key==='t'||e.key==='T'){var tb=document.querySelector('.lmux-dd[data-k=t]>button');tb&&tb.click();return}
+ if((e.key==='b'||e.key==='B')&&innerWidth>900){var tg=document.querySelector('.lmux-tog');tg&&tg.click();return}
+ if(e.key==='?'){help()}},true);
+document.addEventListener('click',function(e){if(open&&!open.m.parentNode.contains(e.target))close()});
+var q=0;function tick(){q=0;ensureBar();ensurePresets();ensureSplit()}
+new MutationObserver(function(){if(!q){q=1;requestAnimationFrame(tick)}}).observe(document.documentElement,{childList:true,subtree:true});
+tick();addEventListener('resize',function(){if(B>innerHeight*.75)setB(B)});
+})();
+</script></body></html>
