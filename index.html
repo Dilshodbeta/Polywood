@@ -11106,7 +11106,7 @@ var K='lmFlex:';
 function st(){return window.__lmStore&&window.__lmStore.getState()}
 function gens(){return window.__lmGens||[]}
 function gen(){var s=st();return s&&gens().find(function(g){return g.id===s.generatorId})}
-function DEF(){return{on:false,kind:'straight',pitch:4,auto:true,w:1,kerf:0.2,hole:1.6,edge:3.2,amp:1.8,wave:20,deco:'none',dd:1.4,dsh:'circle',dper:0,seg:22,br:3,grad:'none',gk:.5,per:null,sel:null,zones:[],Rset:{},adv:false}}
+function DEF(){return{on:false,kind:'straight',pitch:4,auto:true,w:1,kerf:0.2,hole:1.6,edge:3.2,amp:1.8,wave:20,deco:'none',dd:1.4,dsh:'circle',dper:0,seg:22,br:3,grad:'none',gk:.5,per:null,sel:null,zones:[],Rset:{},adv:false,G:700,tau:8,beta:.2,sf:1.5,rfill:true}}
 function cfg(id){var c=DEF();try{var o=JSON.parse(localStorage.getItem(K+id)||'null');if(o)for(var k in o)c[k]=o[k]}catch(e){}return c}
 function save(id,c){try{localStorage.setItem(K+id,JSON.stringify(c))}catch(e){}}
 function X(p){return p.x!==undefined?p.x:p[0]}function Y(p){return p.y!==undefined?p.y:p[1]}
@@ -11134,7 +11134,10 @@ function analyze(part){
  var r0=1e9,r1=0;rs[0].forEach(function(p){var d=Math.hypot(X(p)-cx,Y(p)-cy);if(d<r0)r0=d;if(d>r1)r1=d});
  var ang=ls.map(function(s){return Math.atan2((Y(s.a)+Y(s.b))/2-cy,(X(s.a)+X(s.b))/2-cx)});var m0=ang[0];
  ang=ang.map(function(a){var d=a-m0;while(d>Math.PI)d-=2*Math.PI;while(d<-Math.PI)d+=2*Math.PI;return m0+d});
- A.mode='r';A.cx=cx;A.cy=cy;A.r0=r0;A.r1=r1;A.u0=Math.min.apply(0,ang);A.u1=Math.max.apply(0,ang);return A}
+ A.mode='r';A.cx=cx;A.cy=cy;A.r0=r0;A.r1=r1;A.u0=Math.min.apply(0,ang);A.u1=Math.max.apply(0,ang);
+ // ilmiy ish 3.3: yoyilmada rho masofada kerakli radius R = rho*tan(gamma); sin(psi) = sektor burchagi / 360
+ var aa=rs[0].map(function(p){return Math.atan2(Y(p)-cy,X(p)-cx)}).sort(function(a,b){return a-b}),gap=0;for(var i=0;i<aa.length;i++){var g=(i+1<aa.length?aa[i+1]:aa[0]+2*Math.PI)-aa[i];if(g>gap)gap=g}
+ var sp=2*Math.PI-gap,sn=Math.min(.999,sp/(2*Math.PI)),tg=sn/Math.sqrt(1-sn*sn);A.alpha=sp*180/Math.PI;A.tg=tg;A.Rk0=r0*tg;A.Rk1=r1*tg;A.cone=true;if(!A.R)A.R=A.Rk0;return A}
 /* kesma P->Q ning detal ichidagi qismlari (juft-toq qoida, teshiklar hisobga olinadi) */
 function inside(rs,P0,Q){var ts=[];rs.forEach(function(r){for(var i=0;i<r.length;i++){var a=r[i],b=r[(i+1)%r.length];var ex=X(b)-X(a),ey=Y(b)-Y(a),dx=Q.x-P0.x,dy=Q.y-P0.y,dn=dx*ey-dy*ex;if(Math.abs(dn)<1e-12)continue;var s=((X(a)-P0.x)*ey-(Y(a)-P0.y)*ex)/dn,u=((X(a)-P0.x)*dy-(Y(a)-P0.y)*dx)/dn;if(s>=0&&s<=1&&u>=0&&u<1)ts.push(s)}});ts.sort(function(a,b){return a-b});var o=[];for(var i=0;i+1<ts.length;i+=2)o.push([ts[i],ts[i+1]]);return o}
 function circle(x,y,r){var o=[];for(var k=0;k<=24;k++){var a=2*Math.PI*k/24;o.push(P(x+r*Math.cos(a),y+r*Math.sin(a)))}return o}
@@ -11171,10 +11174,21 @@ function slot(pts,w){ // chiziqni eni w bo'lgan tirqishga aylantirish
  var L=[],R=[],h=w/2;
  for(var i=0;i<pts.length;i++){var a=pts[Math.max(0,i-1)],b=pts[Math.min(pts.length-1,i+1)],dx=b[0]-a[0],dy=b[1]-a[1],d=Math.hypot(dx,dy)||1,nx=-dy/d*h,ny=dx/d*h;L.push(P(pts[i][0]+nx,pts[i][1]+ny));R.push(P(pts[i][0]-nx,pts[i][1]-ny))}
  var o=L.concat(R.reverse());o.push(o[0]);return[o]}
-function pitchFor(A,c,Lb){var t=(A.part.thickness||3),kw=Math.max(c.w||0,c.kerf||.2);if(!c.auto||!A.R)return c.pitch;var ps=[5,4,3,2.5,2,1.6];for(var i=0;i<ps.length;i++){var p=ps[i];if(p>Math.max(1.6,A.R/8))continue;if(Math.min(p-kw,t)*(p/A.R)/Lb<=.01)return p}return 1.6}
+function pitchFor(A,c,Lb){var t=(A.part.thickness||3),kw=Math.max(c.w||0,c.kerf||.2),R=needR(A);if(!c.auto||!R)return c.pitch;var ps=[5,4,3.5,3,2.5,2,1.6],sf=c.sf||1.5,k1=A.cone?A.r1/A.r0:1;for(var i=0;i<ps.length;i++){var p=ps[i];if(p-kw<bmin(t))continue;if(rMin(t,p,kw,Lb,c)<=R[0]/sf&&rMin(t,p*k1,kw,Lb,c)<=R[1]/sf)return p}return Math.max(1.6,Math.round((bmin(t)+kw)*10)/10)}
 function slotW(A,c,p){ // QOIDA: kesik eni qancha katta bo'lsa, tasmalar bir-biriga tegmasdan shuncha kichik radiusgacha egiladi: R_tegish = t*p/eni
  var t=A.part.thickness||3,k=c.kerf||.2,s=Math.max(c.w||0,k);if(c.auto&&A.R)s=Math.max(s,1.25*t*p/A.R);s=Math.min(s,Math.max(k,p-1.2));return Math.round(s*20)/20}
 function rTouch(A,p,s){return(A.part.thickness||3)*p/Math.max(s,.05)}
+/* ILMIY ISH (Jo'raqulov D., 2026): lamel buralishi bo'yicha
+   R_min ~ p*G*b / (1.1*tau*L)   - sinmasdan egiladigan eng kichik radius
+   K     ~ beta*t*b^3*G*p / (L*H) - sharnir bikrligi (N*mm/rad);  b = min(p - kerf, t)
+   shart: R_min <= R_kerak / 1.5;  3 mm fanerda b >= 1.0-1.2 mm */
+function bmin(t){return Math.max(.8,Math.min(1.6,.4*t))}
+function lamB(t,p,sw){return Math.min(p-sw,t)}
+function rMin(t,p,sw,L,c){var b=lamB(t,p,sw);if(!(b>0))return Infinity;return p*(c.G||700)*b/(1.1*(c.tau||8)*Math.max(L,1))}
+function stiff(t,p,sw,L,H,c){var b=Math.max(0,lamB(t,p,sw));return(c.beta||.2)*t*b*b*b*(c.G||700)*p/(Math.max(L,1)*Math.max(H,1))}
+function needR(A){return A.cone?[A.Rk0,A.Rk1]:(A.R?[A.R,A.R]:null)}
+function phys(A,c,p0,p1,sw,L,H){var t=A.part.thickness||3,o={rm0:rMin(t,p0,sw,L,c),rm1:rMin(t,p1,sw,L,c),K:stiff(t,(p0+p1)/2,sw,L,H,c),b:lamB(t,p0,sw),bmin:bmin(t)},R=needR(A),sf=c.sf||1.5;
+ o.rm=Math.max(o.rm0,o.rm1);if(R){o.ratio=Math.max(o.rm0/(R[0]/sf),o.rm1/(R[1]/sf))}return o}
 function gamma(A,c,p,Lb,sw){if(!A.R||!(Lb>0))return null;var t=(A.part.thickness||3),kw=sw||Math.max(c.w||0,c.kerf||.2);return Math.min(p-kw,t)*(p/A.R)/Lb*100}
 var LAT={dash:1,lens:1,xwave:1,hook:1,hex:1,auxetic:1,spiral:1};
 function cellNet(A,c){ // ikki tomonga egiluvchi: auksetik aylanuvchi kvadratlar / kvadrat spirallar (Kofaktor uslubi)
@@ -11219,7 +11233,7 @@ function latBuild(A,c){
    for(var y=y0;y<b;y+=per){var s0=Math.max(y,a+br),s1=Math.min(y+seg,b-br);if(s1-s0<3)continue;
     latSeg(c,ox,oy,ux,uy,s0,s1,k,sw).forEach(function(l){out.push(l)})}})}
  var g=A.R?Math.min(p-sw,t)*(p/A.R)/Lt*100:null;
- return{lines:out,pitch:p,n:n+1,g:g,sw:sw,rc:rTouch(A,p,sw),warn:'panjara: kesiklar chetga chiqmaydi — 3 mm fanerda faqat oraliq kichik va kesik uzun bo‘lsa egiladi, avval sinov namunasi'}}
+ var ph=phys(A,c,p,p,sw,seg,A.mode==='v'?A.u1-A.u0:A.u1-A.u0);return{lines:out,pitch:p,n:n+1,g:g,ph:ph,sw:sw,rc:rTouch(A,p,sw),warn:'panjara: kesiklar chetga chiqmaydi — 3 mm fanerda faqat oraliq kichik va kesik uzun bo‘lsa egiladi, avval sinov namunasi'}}
 function colPos(A,c,step){ // kesiklar o'rni; gradient: markazda yoki chetlarda zichroq (egilish shu yerda to'planadi)
  var sh=(A.mode!=='r'&&c.kind!=='straight')?Math.abs(c.amp||0)+1:0,a=A.u0+sh,b=A.u1-sh,o=[];if(!(b>a))return[a];
  if(!c.grad||c.grad==='none'){var n=Math.max(0,Math.round((b-a)/step)),u=(a+b)/2-n*step/2;for(var k=0;k<=n;k++)o.push(u+k*step);return o}
@@ -11234,14 +11248,14 @@ function optimize(A,c){
  var t=A.part.thickness||3,kind=LAT[c.kind]?'straight':c.kind,best=null,fall=null;
  if(!A.R)return{pitch:3,w:1,kind:kind,ok:null,why:'radius nomaʼlum — 3 mm fanerga umumiy tavsiya'};
  [5,4,3.5,3,2.5,2,1.6].forEach(function(p){if(p>Math.max(1.6,A.R/6))return;
-  [0.2,0.3,0.4,0.5,0.6,0.8,1,1.2,1.5].forEach(function(w){if(p-w<1.4)return;
+  [0.2,0.3,0.4,0.5,0.6,0.8,1,1.2,1.5].forEach(function(w){if(p-w<bmin(t))return;
    var cc={};for(var k in c)cc[k]=c[k];cc.kind=kind;cc.pitch=p;cc.w=w;cc.auto=false;cc.per=null;cc.grad='none';
-   var r=rebuild(A,cc);if(!r.n)return;var g=r.g==null?0:r.g,rt=t*p/Math.max(w,c.kerf||.2);
-   var bad=Math.max(g/1.0,rt/(.85*A.R));var cand={pitch:p,w:w,kind:kind,g:g,rt:rt,n:r.n,len:cutLen(r.lines),ok:bad<=1};
+   var r=rebuild(A,cc);if(!r.n)return;var g=r.g==null?0:r.g,rt=t*p/Math.max(w,c.kerf||.2),ph=r.ph||{ratio:g};
+   var bad=Math.max(ph.ratio!=null?ph.ratio:g,rt/(.85*A.R));var cand={pitch:p,w:w,kind:kind,g:g,rt:rt,rm:ph.rm,K:ph.K,n:r.n,len:cutLen(r.lines),ok:bad<=1};
    if(cand.ok){if(!best||p>best.pitch||(p===best.pitch&&w<best.w))best=cand}
    else if(!fall||bad<fall.bad){cand.bad=bad;fall=cand}})});
  var o=best||fall;if(!o)return{pitch:1.6,w:.2,kind:kind,ok:false,why:'detal juda kichik'};
- o.why=best?'buralish '+o.g.toFixed(2)+'%, tasmalar R '+o.rt.toFixed(0)+' da tegadi (detal R '+A.R.toFixed(0)+')':'shartga to‘liq mos variant yo‘q — eng yaqini; radiusni kattalashtiring yoki yupqaroq faner oling';
+ o.why=best?'R_min '+o.rm.toFixed(0)+' mm ≤ R/'+(c.sf||1.5)+' = '+(A.R/(c.sf||1.5)).toFixed(0)+' mm'+(A.cone?' (ikkala uchda)':'')+', tasmalar R '+o.rt.toFixed(0)+' da tegadi, bikrlik '+o.K.toFixed(0)+' N·mm/rad':'shartga to‘liq mos variant yo‘q — eng yaqini; radiusni kattalashtiring yoki yupqaroq faner oling';
  return o}
 function rebuild(A,c){
  c=perPart(A,c);
@@ -11276,8 +11290,15 @@ function rebuild(A,c){
      var o1=shapeOff(c,C1.uf,(s-q[0])/Math.max(1,q[1]-q[0]),q[1]-q[0]),o2=shapeOff(c,C2.uf,(s-q2[0])/Math.max(1,q2[1]-q2[0]),q2[1]-q2[0]);
      var x1=C1.ox+C1.ux*s-C1.uy*o1,y1=C1.oy+C1.uy*s+C1.ux*o1,x2=C2.ox+C2.ux*s-C2.uy*o2,y2=C2.oy+C2.uy*s+C2.ux*o2;
      out.push(decoHole((x1+x2)/2,(y1+y2)/2,c.dd,c.dsh,(C1.ux+C2.ux)/2,(C1.uy+C2.uy)/2))})})}}
- var Lm=lens.length?lens.reduce(function(a,b){return a+b},0)/lens.length:Lb;
- return{lines:out,pitch:p,n:col,g:gamma(A,c,p,Lm,sw),sw:sw,rc:rTouch(A,p,sw),warn:warn}}
+ var Lm=lens.length?lens.reduce(function(a,b){return a+b},0)/lens.length:Lb,p1=A.mode==='r'?step*A.r1:p,extra=0;
+ // ilmiy ish 3.3: konusning katta uchida qadam kengayib ketsa - o'rtadan tashqi chetgacha qo'shimcha radial chiziqlar
+ if(A.mode==='r'&&c.rfill!==false&&cols.length>1){var t0=A.part.thickness||3,R1=needR(A),bad1=R1&&rMin(t0,p1,sw,Lm,c)>R1[1]/(c.sf||1.5);
+  if(A.r1/A.r0>1.8||bad1){var rmid=(A.r0+A.r1)/2;for(var k3=0;k3+1<cols.length;k3++){var um=(cols[k3].u+cols[k3+1].u)/2,ux3=Math.cos(um),uy3=Math.sin(um),ox3=A.cx+ux3*(A.r0-5),oy3=A.cy+uy3*(A.r0-5),len3=A.r1-A.r0+10;
+   inside(A.rs,{x:ox3,y:oy3},{x:ox3+ux3*len3,y:oy3+uy3*len3}).forEach(function(q){var a3=q[0]*len3,b3=q[1]*len3,sm=Math.max(a3+e,rmid-(A.r0-5));if(b3-sm<2*e+2)return;
+    var pts=[[ox3+ux3*sm,oy3+uy3*sm],[ox3+ux3*(b3+.3),oy3+uy3*(b3+.3)]];slot(pts,sw>(c.kerf||.2)+.05?sw:0).forEach(function(l){out.push(l)});if(c.hole>0)out.push(circle(pts[0][0],pts[0][1],Math.max(c.hole,sw+.4)/2));extra++})}
+   p1=p1/2}}
+ var Hh=A.mode==='r'?(A.u1-A.u0)*(A.r0+A.r1)/2:A.u1-A.u0,ph=phys(A,c,p,p1,sw,Lm,Hh);
+ return{lines:out,pitch:p,p1:A.mode==='r'?+(step*A.r1).toFixed(2):null,extra:extra,n:col+extra,g:gamma(A,c,p,Lm,sw),ph:ph,sw:sw,rc:rTouch(A,p,sw),Lm:Lm,warn:warn}}
 function zoneA(pt,z,i){var rs=rings(pt);if(!rs.length)return null;var bb=bbox(rs),v=z.axis!=='h',lo=v?bb.x0:bb.y0,hi=v?bb.x1:bb.y1,u0=Math.max(lo+1,Math.min(z.u0,z.u1)),u1=Math.min(hi-1,Math.max(z.u0,z.u1));if(!(u1-u0>=2))return null;
  return{part:pt,bb:bb,rs:rs,R:z.R>0?+z.R:null,mode:v?'v':'h',u0:u0,u1:u1,zone:z,zi:i,key:pt.id+'#z'+i}}
 function flexParts(model,c){c=c||{};var o=[];(model&&model.parts||[]).forEach(function(pt){var A=analyze(pt);if(A){A.key=pt.id;if(!A.R&&c.Rset&&c.Rset[A.key]>0)A.R=+c.Rset[A.key];o.push(A)}});
@@ -11303,22 +11324,23 @@ css.textContent+='#lmFx .seg{display:inline-flex;border:1px solid #d8cfbe;border
 '#lmFxT{position:fixed;inset:0;z-index:10000;background:#0008;display:none;align-items:center;justify-content:center;padding:12px}#lmFxT .bx{background:#fffdf8;color:#1d1b17;width:min(900px,100%);max-height:94vh;overflow:auto;border-radius:14px;padding:16px;font:13px/1.45 system-ui,sans-serif}#lmFxT input[type=number],#lmFxT input[type=text]{font:inherit;padding:4px 6px;border:1px solid #d8cfbe;border-radius:7px;width:78px}#lmFxT input[type=text]{width:130px}#lmFxT .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}#lmFxT button{font:inherit;border:1px solid #d8cfbe;background:#fff;color:#1d1b17;border-radius:8px;padding:7px 12px;cursor:pointer}#lmFxT .pri{background:#e2a812;border-color:#e2a812;font-weight:700}#lmFxTC{width:100%;height:340px;border:1px solid #e3dccd;border-radius:8px;background:#fff;display:block}#lmFxT .mu{color:#6d665a;font-size:12px}';
 var KINDS=[['straight','To‘g‘ri','chetdan chetga'],['sine','To‘lqin','chetdan chetga'],['zigzag','Zigzag','chetdan chetga'],['bow','Yoy','chetdan chetga'],['chevron','Romb burchak','chetdan chetga'],['notch','Markazda V','chetdan chetga'],['dip','Chuqurcha','chetdan chetga'],['diag','Qiya','chetdan chetga'],['herring','Archa','chetdan chetga'],['key','Meandr','chetdan chetga'],['dash','Shtrixlar','panjara'],['lens','Ko‘z','panjara'],['xwave','X to‘lqin','panjara'],['hook','S ilmoq','panjara'],['hex','Olti burchak','panjara'],['auxetic','Auksetik','2 tomonga'],['spiral','Spirallar','2 tomonga']];
 var m=document.createElement('div');m.id='lmFx';m.className='simple';m.innerHTML='<div class=bx><h3>〰 Egiluvchan qism — kesiklarni sozlash</h3><p class=mu style=margin:0>Egiluvchan detallar (tasma, qobiq, konus) avtomatik topiladi; istalgan boshqa detalga esa <b>zona</b> qo‘shish mumkin. Har bir kesik detalni chetdan chetga kesib o‘tadi: bir uchi chetga ochiq, ikkinchisi teshik bilan tugaydi. Kesik qancha keng bo‘lsa, shuncha kichik radiusga egiladi.</p>'+
-'<div class=row><label><input type=checkbox id=lmFxOn> <b>Qayta ishlashni yoqish</b></label><span class=mu id=lmFxG></span><span style=flex:1></span><span class=seg><button id=lmFxMs class=on>Oddiy</button><button id=lmFxMa>Kengaytirilgan</button></span><button id=lmFxTB title="Fanerga kesib sinash uchun turli oraliq va enlar">🧪 Sinov kartasi</button></div>'+
+'<div class=row><label><input type=checkbox id=lmFxOn> <b>Qayta ishlashni yoqish</b></label><span class=mu id=lmFxG></span><span style=flex:1></span><span class=seg><button id=lmFxMs class=on>Oddiy</button><button id=lmFxMa>Kengaytirilgan</button></span><button id=lmFxTB title="Fanerga kesib sinash uchun turli oraliq va enlar">🧪 Sinov kartasi</button><button id=lmFxKB title="Kesik konus yoyilmasi: radial kerf, halqalar va tishchalar">🔺 Kesik konus</button></div>'+
 '<b>Kesik turi</b><div id=lmFxCards></div><select id=lmFxK style=display:none>'+KINDS.map(function(k){return'<option value='+k[0]+'>'+k[1]+'</option>'}).join('')+'</select>'+
 '<div class=row><label>Chiziqlar orasi <input type=number id=lmFxP min=1 max=20 step=0.1> mm</label><label><input type=checkbox id=lmFxA> avtomatik</label><label><b>Kesik eni</b> <input type=number id=lmFxW min=0 max=4 step=0.05> mm</label><label class=adv>lazer nuri eni <input type=number id=lmFxKf min=0.05 max=0.6 step=0.01> mm</label><span class=mu>tegish radiusi ≈ qalinlik × oraliq ÷ eni</span></div>'+
 '<div class="row adv"><label>Panjara kesigi <input type=number id=lmFxSg min=6 max=80 step=1> mm</label><label>ko‘prik <input type=number id=lmFxBr min=1 max=10 step=0.1> mm</label><label>Uchidagi teshik ⌀ <input type=number id=lmFxH min=0 max=4 step=0.1> mm</label><label>Yopiq uchdan chetgacha <input type=number id=lmFxE min=1.5 max=10 step=0.1> mm</label><label>To‘lqin balandligi <input type=number id=lmFxAm min=0.5 max=5 step=0.1> mm</label><label>To‘lqin uzunligi <input type=number id=lmFxWv min=4 max=80 step=1> mm</label></div>'+
+'<div class="row adv"><b>Material</b><label>siljish moduli G <input type=number id=lmFxMG min=100 max=3000 step=10> MPa</label><label>ruxsat etilgan τ <input type=number id=lmFxMt min=1 max=30 step=0.5> MPa</label><label>β <input type=number id=lmFxMb min=0.05 max=0.5 step=0.01></label><label>zaxira <input type=number id=lmFxMs2 min=1 max=3 step=0.1></label><label><input type=checkbox id=lmFxRf> konusda qo‘shimcha radial chiziqlar</label><span class=mu>qayin fanera: G≈700, τ≈8, β≈0,2; shart R_min ≤ R/zaxira</span></div>'+
 '<div class="row adv">Zichlik gradienti <select id=lmFxGr><option value=none>bir xil</option><option value=center>markazda zich</option><option value=edges>chetlarda zich</option></select><label>kuchi <input type=number id=lmFxGk min=0 max=0.8 step=0.05></label>Bezak teshiklar <select id=lmFxD><option value=none>— yo‘q —</option><option value=grid>To‘r</option><option value=sine>To‘lqin</option><option value=double>Qo‘sh to‘lqin</option><option value=chain>Ikki qator oval</option><option value=diamond>Romb / X</option><option value=rings>Halqalar</option></select><select id=lmFxDs><option value=circle>doira</option><option value=diamond>romb</option></select><label>O‘lchami <input type=number id=lmFxDd min=0.6 max=4 step=0.1> mm</label><label>Naqsh davri <input type=number id=lmFxDp min=0 max=400 step=1> mm</label></div>'+
 '<div class=card><b>➕ Istalgan detalga egiluvchan zona</b><div class=row style="margin:2px 0"><label>Detal <select id=lmFxZP style=max-width:230px></select></label><label>Kesiklar <select id=lmFxZA><option value=v>tik — X bo‘ylab egiladi</option><option value=h>yotiq — Y bo‘ylab egiladi</option></select></label><label>dan <input type=number id=lmFxZ0 step=1></label><label>gacha <input type=number id=lmFxZ1 step=1> mm</label><label>kerakli R <input type=number id=lmFxZR min=0 step=1 placeholder=—> mm</label><button id=lmFxZAdd class=pri>Zona qo‘shish</button></div><div id=lmFxZL class=mu></div><div class=mu>Zona tanlanganda o‘ng tomondagi chizmada sichqoncha bilan sudrab uning chegarasini o‘zgartirish mumkin.</div></div>'+
 '<div class=row><button id=lmFxAll>Hammasini belgilash</button><button id=lmFxNone>Hech birini</button><span class=mu>Belgilangan detallar qayta ishlanadi.</span></div>'+
-'<div id=lmFxO class=mu style="display:none;margin:6px 0;padding:8px 10px;background:#fbf1d4;border-radius:8px;color:#1d1b17"></div><div class=cols><div id=lmFxL></div><canvas id=lmFxC style=touch-action:none></canvas></div>'+
+'<div id=lmFxO class=mu style="display:none;margin:6px 0;padding:8px 10px;background:#fbf1d4;border-radius:8px;color:#1d1b17"></div><div class=cols><div id=lmFxL></div><canvas id=lmFxC style=touch-action:none></canvas></div><div id=lmFxTips></div>'+
 '<div class=two><div class=card><b>Egilish ko‘rinishi (yon tomondan)</b><canvas id=lmFxB></canvas><div class=row style="margin:4px 0 0"><label>Burchak <input type=range id=lmFxBa min=5 max=360 step=1 value=90 style=width:160px></label><span id=lmFxBt class=mu></span></div></div>'+
 '<div class=card><b>📐 Radius bo‘yicha hisob</b><div class=row style="margin:2px 0"><label>Kerakli radius R <input type=number id=lmFxCR min=3 step=1 value=40> mm</label><label>burchak <input type=number id=lmFxCA min=5 max=360 step=5 value=90>°</label><button id=lmFxCGo>Hisoblash</button></div><div id=lmFxCalcO class=mu>Joriy detal uchun kerakli oraliq, kesik eni va egiluvchan zona uzunligini topadi.</div><div class=row style="margin:4px 0 0"><button id=lmFxCAp disabled>Joriy detalga qo‘llash</button></div></div></div>'+
 '<div class=row><button id=lmFxBest title="Har bir detal uchun eng maqbul oraliq va kesik enini hisoblab beradi">✨ Eng maqbulini taklif qilish</button><button class=pri id=lmFxGo>Qo‘llash</button><button id=lmFxOff>Asl holiga qaytarish</button><span class=mu id=lmFxS></span><span style=flex:1></span><button id=lmFxX>Yopish</button></div></div>';
 document.body.appendChild(m);
 function $(q){return m.querySelector(q)}
 var C=null,G=null,FP=[],curIx=0,MODEL=null,CALC=null;
-function readUI(){C.on=$('#lmFxOn').checked;C.kind=$('#lmFxK').value;C.pitch=+$('#lmFxP').value||4;C.auto=$('#lmFxA').checked;C.w=Math.max(0,+$('#lmFxW').value||0);C.kerf=+$('#lmFxKf').value||.2;C.hole=Math.max(0,+$('#lmFxH').value||0);C.edge=Math.max(1.5,+$('#lmFxE').value||3.2);C.amp=+$('#lmFxAm').value||1.8;C.wave=+$('#lmFxWv').value||20;C.deco=$('#lmFxD').value;C.dsh=$('#lmFxDs').value;C.dd=+$('#lmFxDd').value||1.4;C.dper=Math.max(0,+$('#lmFxDp').value||0);C.seg=+$('#lmFxSg').value||22;C.br=+$('#lmFxBr').value||3;C.grad=$('#lmFxGr').value;C.gk=+$('#lmFxGk').value||0}
-function writeUI(){$('#lmFxOn').checked=!!C.on;$('#lmFxK').value=C.kind;$('#lmFxP').value=C.pitch;$('#lmFxA').checked=!!C.auto;$('#lmFxW').value=C.w;$('#lmFxKf').value=C.kerf||.2;$('#lmFxH').value=C.hole;$('#lmFxE').value=C.edge;$('#lmFxAm').value=C.amp;$('#lmFxWv').value=C.wave;$('#lmFxD').value=C.deco||'none';$('#lmFxDs').value=C.dsh||'circle';$('#lmFxDd').value=C.dd||1.4;$('#lmFxDp').value=C.dper||0;$('#lmFxSg').value=C.seg||22;$('#lmFxBr').value=C.br||3;$('#lmFxGr').value=C.grad||'none';$('#lmFxGk').value=C.gk==null?.5:C.gk;setMode(!!C.adv,1)}
+function readUI(){C.on=$('#lmFxOn').checked;C.kind=$('#lmFxK').value;C.pitch=+$('#lmFxP').value||4;C.auto=$('#lmFxA').checked;C.w=Math.max(0,+$('#lmFxW').value||0);C.kerf=+$('#lmFxKf').value||.2;C.hole=Math.max(0,+$('#lmFxH').value||0);C.edge=Math.max(1.5,+$('#lmFxE').value||3.2);C.amp=+$('#lmFxAm').value||1.8;C.wave=+$('#lmFxWv').value||20;C.deco=$('#lmFxD').value;C.dsh=$('#lmFxDs').value;C.dd=+$('#lmFxDd').value||1.4;C.dper=Math.max(0,+$('#lmFxDp').value||0);C.seg=+$('#lmFxSg').value||22;C.br=+$('#lmFxBr').value||3;C.grad=$('#lmFxGr').value;C.gk=+$('#lmFxGk').value||0;C.G=+$('#lmFxMG').value||700;C.tau=+$('#lmFxMt').value||8;C.beta=+$('#lmFxMb').value||.2;C.sf=Math.max(1,+$('#lmFxMs2').value||1.5);C.rfill=$('#lmFxRf').checked}
+function writeUI(){$('#lmFxOn').checked=!!C.on;$('#lmFxK').value=C.kind;$('#lmFxP').value=C.pitch;$('#lmFxA').checked=!!C.auto;$('#lmFxW').value=C.w;$('#lmFxKf').value=C.kerf||.2;$('#lmFxH').value=C.hole;$('#lmFxE').value=C.edge;$('#lmFxAm').value=C.amp;$('#lmFxWv').value=C.wave;$('#lmFxD').value=C.deco||'none';$('#lmFxDs').value=C.dsh||'circle';$('#lmFxDd').value=C.dd||1.4;$('#lmFxDp').value=C.dper||0;$('#lmFxSg').value=C.seg||22;$('#lmFxBr').value=C.br||3;$('#lmFxGr').value=C.grad||'none';$('#lmFxGk').value=C.gk==null?.5:C.gk;$('#lmFxMG').value=C.G||700;$('#lmFxMt').value=C.tau||8;$('#lmFxMb').value=C.beta||.2;$('#lmFxMs2').value=C.sf||1.5;$('#lmFxRf').checked=C.rfill!==false;setMode(!!C.adv,1)}
 function setMode(adv,quiet){C.adv=adv;m.classList.toggle('simple',!adv);$('#lmFxMs').classList.toggle('on',!adv);$('#lmFxMa').classList.toggle('on',adv)}
 $('#lmFxMs').onclick=function(){setMode(false)};$('#lmFxMa').onclick=function(){setMode(true)};
 /* --- kesik kartochkalari */
@@ -11338,9 +11360,9 @@ $('#lmFxZP').onchange=zoneDef;$('#lmFxZA').onchange=zoneDef;
 $('#lmFxZAdd').onclick=function(){var p=zPart();if(!p)return;C.zones=C.zones||[];C.zones.push({part:p.id,axis:$('#lmFxZA').value,u0:+$('#lmFxZ0').value,u1:+$('#lmFxZ1').value,R:+$('#lmFxZR').value||0});rebuildFP();var i=C.zones.length-1,ix=FP.findIndex(function(A){return A.zone&&A.zi===i});if(ix<0){C.zones.pop();alert('Zona detal ichida emas yoki juda tor (kamida 2 mm)');return}curIx=ix;refresh()};
 function rebuildFP(){FP=flexParts(MODEL,C);if(curIx>=FP.length)curIx=Math.max(0,FP.length-1);zoneUI()}
 function key(A){return A.key||A.part.id}
-function list(){var h='<table><tr><th></th><th>Detal</th><th>Radius</th><th>Oraliq</th><th>Eni</th><th>Kesiklar</th><th>Buralish</th><th>Tegish R</th></tr>';var PR=C.per||{};
- FP.forEach(function(A,i){var r=rebuild(A,C),k=key(A),on=!(C.sel&&C.sel[k]===false),g=r.g;
-  h+='<tr data-i='+i+(i===curIx?' class=cur':'')+'><td>'+(PR[k]?'<span title="tavsiya qilingan">★</span>':'')+'<input type=checkbox data-id="'+String(k).replace(/"/g,'')+'"'+(on?' checked':'')+'></td><td>'+(A.zone?'<span title="qo‘lda qo‘shilgan zona">◧</span> ':'')+A.part.id+' — '+String(A.part.name||'').replace(/</g,'&lt;')+(A.zone?' <span class=mu>('+(A.mode==='v'?'X ':'Y ')+A.u0.toFixed(0)+'…'+A.u1.toFixed(0)+')</span>':'')+'</td><td>'+(A.R?A.R.toFixed(1):'—')+'</td><td>'+r.pitch+'</td><td>'+(r.sw!=null?r.sw:'—')+'</td><td>'+r.n+'</td><td>'+(g==null?'<span class=mu>R nomaʼlum</span>':'<span class='+(g<=1.5?'ok':'bad')+'>'+g.toFixed(2)+'%</span>')+'</td><td>'+(r.rc==null?'—':(A.R?'<span class='+(r.rc<=A.R?'ok':'bad')+'>'+r.rc.toFixed(0)+'</span>':r.rc.toFixed(0)))+'</td></tr>'});
+function list(){var h='<table><tr><th></th><th>Detal</th><th title="egilishi kerak bo‘lgan radius (konusda: kichik … katta uch)">Kerakli R</th><th>Oraliq</th><th>Eni</th><th>Kesiklar</th><th title="sinmasdan egiladigan eng kichik radius: R_min ≈ p·G·b / (1,1·τ·L); shart R_min ≤ R/1,5">R_min</th><th title="tasmalar bir-biriga tegadigan radius ≈ t·p/eni">Tegish R</th><th title="sharnir bikrligi K ≈ β·t·b³·G·p/(L·H)">Bikrlik</th></tr>';var PR=C.per||{};
+ FP.forEach(function(A,i){var r=rebuild(A,C),k=key(A),on=!(C.sel&&C.sel[k]===false),g=r.g,ph=r.ph,sf=C.sf||1.5,RR=needR(A);
+  h+='<tr data-i='+i+(i===curIx?' class=cur':'')+'><td>'+(PR[k]?'<span title="tavsiya qilingan">★</span>':'')+'<input type=checkbox data-id="'+String(k).replace(/"/g,'')+'"'+(on?' checked':'')+'></td><td>'+(A.zone?'<span title="qo‘lda qo‘shilgan zona">◧</span> ':'')+A.part.id+' — '+String(A.part.name||'').replace(/</g,'&lt;')+(A.zone?' <span class=mu>('+(A.mode==='v'?'X ':'Y ')+A.u0.toFixed(0)+'…'+A.u1.toFixed(0)+')</span>':'')+'</td><td>'+(RR?(A.cone?RR[0].toFixed(0)+'…'+RR[1].toFixed(0):RR[0].toFixed(0)):'—')+'</td><td>'+r.pitch+(r.p1&&Math.abs(r.p1-r.pitch)>.2?'…'+r.p1:'')+'</td><td>'+(r.sw!=null?r.sw:'—')+'</td><td>'+r.n+(r.extra?' <span class=mu title="katta uchdagi qo‘shimcha radial chiziqlar">(+'+r.extra+')</span>':'')+'</td><td>'+(!ph?'—':(ph.ratio==null?'<span class=mu>'+ph.rm.toFixed(0)+'</span>':'<span class='+(ph.ratio<=1?'ok':'bad')+' title="ruxsat: '+(RR[0]/sf).toFixed(0)+' mm">'+ph.rm.toFixed(0)+'</span>'))+(ph&&ph.b<ph.bmin?' <span class=bad title="lamel eni '+ph.b.toFixed(2)+' mm < '+ph.bmin.toFixed(1)+' mm — kuyib mo‘rtlashadi">⚠b</span>':'')+'</td><td>'+(r.rc==null?'—':(A.R?'<span class='+(r.rc<=A.R?'ok':'bad')+'>'+r.rc.toFixed(0)+'</span>':r.rc.toFixed(0)))+'</td><td>'+(ph?ph.K.toFixed(0):'—')+'</td></tr>'});
  h+='</table>';$('#lmFxL').innerHTML=FP.length?h:'<p class=mu style=padding:10px>Bu maketda egiluvchan detal topilmadi. Yuqorida istalgan detalga <b>zona qo‘shing</b>.</p>';
  [].forEach.call($('#lmFxL').querySelectorAll('tr[data-i]'),function(tr){tr.onclick=function(ev){if(ev.target.tagName==='INPUT')return;curIx=+tr.dataset.i;list();draw();bend();CALC=null;$('#lmFxCAp').disabled=true}});
  [].forEach.call($('#lmFxL').querySelectorAll('input[data-id]'),function(cb){cb.onchange=function(){C.sel=C.sel||{};C.sel[cb.dataset.id]=cb.checked}})}
@@ -11352,7 +11374,7 @@ function draw(){var cv=$('#lmFxC'),dpr=window.devicePixelRatio||1,W=cv.clientWid
  c.lineWidth=1;c.strokeStyle='#1d1b17';A.rs.forEach(function(r){pl(r,true)});
  if(A.zone){c.strokeStyle='#9a8f7c';(A.part.cutLines||[]).forEach(function(l){pl(l,false)})}
  var r=rebuild(A,C);c.strokeStyle='#c0392b';c.lineWidth=Math.max(.8,(r.sw&&r.sw>(C.kerf||.2)+.05?0:(C.kerf||.2))*s);(r.lines).forEach(function(l){pl(l,false)});
- c.fillStyle='#6d665a';c.font='12px system-ui';c.fillText(A.part.id+' · '+(bb.x1-bb.x0).toFixed(0)+' × '+(bb.y1-bb.y0).toFixed(0)+' mm · oraliq '+r.pitch+' mm · '+r.n+' kesik'+(r.sw!=null?' · eni '+r.sw+' mm':'')+(r.g!=null?' · buralish '+r.g.toFixed(2)+'%':'')+(r.rc!=null&&A.R&&r.rc>A.R?' · ⚠ tasmalar R '+r.rc.toFixed(0)+' da tegadi — enini oshiring':'')+(r.warn?' · ⚠ '+r.warn:''),10,H-6)}
+ tips(A,r);c.fillStyle='#6d665a';c.font='12px system-ui';c.fillText(A.part.id+' · '+(bb.x1-bb.x0).toFixed(0)+' × '+(bb.y1-bb.y0).toFixed(0)+' mm · oraliq '+r.pitch+' mm · '+r.n+' kesik'+(r.sw!=null?' · eni '+r.sw+' mm':'')+(r.ph?' · R_min '+r.ph.rm.toFixed(0)+' mm':'')+(r.rc!=null&&A.R&&r.rc>A.R?' · ⚠ tasmalar R '+r.rc.toFixed(0)+' da tegadi — enini oshiring':'')+(r.warn?' · ⚠ '+r.warn:''),10,H-6)}
 /* zona chegarasini sudrash */
 (function(){var cv=$('#lmFxC'),drag=null;function uAt(e){var r=cv.getBoundingClientRect(),x=e.clientX-r.left,y=e.clientY-r.top;return VW.A.mode==='v'?(x-VW.ox)/VW.s:(VW.oy-y)/VW.s}
  cv.addEventListener('pointerdown',function(e){if(!VW||!VW.A.zone)return;var z=VW.A.zone,u=uAt(e);drag={z:z,end:Math.abs(u-z.u0)<Math.abs(u-z.u1)?'u0':'u1'};cv.setPointerCapture(e.pointerId);z[drag.end]=Math.round(u);rebuildFP();draw()});
@@ -11362,7 +11384,7 @@ function draw(){var cv=$('#lmFxC'),dpr=window.devicePixelRatio||1,W=cv.clientWid
 function span(A){if(A.mode==='r')return null;var v=A.mode==='v',lo=v?A.bb.x0:A.bb.y0,hi=v?A.bb.x1:A.bb.y1;return{lo:lo,hi:hi,a:A.zone?A.u0:lo,b:A.zone?A.u1:hi}}
 function bend(setAng){var cv=$('#lmFxB'),dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);var A=FP[curIx],tx=$('#lmFxBt');
  if(!A){tx.textContent='';return}var S=span(A);if(!S){c.fillStyle='#6d665a';c.font='12px system-ui';c.fillText('Konus sektori — o‘ralib konus hosil qiladi (yon ko‘rinish yo‘q).',10,24);tx.textContent='';return}
- var r=rebuild(A,C),t=A.part.thickness||3,Lz=S.b-S.a,L1=S.a-S.lo,L2=S.hi-S.b,rc=r.rc||1e9,sl=$('#lmFxBa');
+ var r=rebuild(A,C),t=A.part.thickness||3,Lz=S.b-S.a,L1=S.a-S.lo,L2=S.hi-S.b,rT=r.rc||0,rB=r.ph?r.ph.rm*(C.sf||1.5):0,rc=Math.max(rT,rB,1e-3),sl=$('#lmFxBa');
  if(setAng){var a0=A.R?Lz/A.R*180/Math.PI:90;sl.value=Math.max(5,Math.min(360,Math.round(a0)))}
  var th=(+sl.value)*Math.PI/180,R=Lz/th;
  var pts=[],N=60;pts.push([0,0]);pts.push([L1,0]);for(var i=1;i<=N;i++){var a=th*i/N;pts.push([L1+R*Math.sin(a),R*(1-Math.cos(a))])}var ex=pts[pts.length-1],dx=Math.cos(th),dy=Math.sin(th);pts.push([ex[0]+dx*L2,ex[1]+dy*L2]);
@@ -11370,7 +11392,7 @@ function bend(setAng){var cv=$('#lmFxB'),dpr=window.devicePixelRatio||1,W=cv.cli
  var ok=R>=rc*0.98;c.lineCap='round';c.lineJoin='round';
  c.strokeStyle='#d9b98a';c.lineWidth=Math.max(2,t*s);c.beginPath();pts.forEach(function(p,i){var x=ox+p[0]*s,y=oy-p[1]*s;i?c.lineTo(x,y):c.moveTo(x,y)});c.stroke();
  c.strokeStyle=ok?'#2d7a35':'#b3261e';c.lineWidth=Math.max(2,t*s);c.beginPath();for(var j=1;j<=N+1;j++){var p=pts[j],x=ox+p[0]*s,y=oy-p[1]*s;j>1?c.lineTo(x,y):c.moveTo(x,y)}c.stroke();
- var mx=Lz/rc*180/Math.PI;tx.innerHTML='<b>'+sl.value+'°</b> · R = '+R.toFixed(0)+' mm · egiluvchan qism '+Lz.toFixed(0)+' mm · '+(ok?'<span class=ok>tasmalar tegmaydi</span>':'<span class=bad>tasmalar bir-biriga tegadi</span>')+' · eng katta burchak ≈ '+(mx>720?'>360':mx.toFixed(0))+'° (R ≥ '+rc.toFixed(0)+' mm)'}
+ var mx=Lz/rc*180/Math.PI;tx.innerHTML='<b>'+sl.value+'°</b> · R = '+R.toFixed(0)+' mm · egiluvchan qism '+Lz.toFixed(0)+' mm · '+(ok?'<span class=ok>xavfsiz</span>':(R<rB?'<span class=bad>sinish xavfi (R_min×'+(C.sf||1.5)+' = '+rB.toFixed(0)+')</span>':'<span class=bad>tasmalar bir-biriga tegadi</span>'))+' · eng katta burchak ≈ '+(mx>720?'>360':mx.toFixed(0))+'° (R ≥ '+rc.toFixed(0)+' mm: '+(rB>=rT?'sinmaslik, R_min×'+(C.sf||1.5):'tasmalar tegishi')+')'}
 $('#lmFxBa').oninput=function(){bend()};
 /* radius bo'yicha hisob */
 $('#lmFxCGo').onclick=function(){readUI();var A=FP[curIx],o=$('#lmFxCalcO');if(!A){o.textContent='Avval detal yoki zona tanlang';return}var R=+$('#lmFxCR').value,ang=+$('#lmFxCA').value;if(!(R>0)){o.textContent='Radiusni kiriting';return}
@@ -11382,13 +11404,13 @@ $('#lmFxCAp').onclick=function(){if(!CALC)return;var A=CALC.A,k=key(A);C.per=C.p
  if(A.zone){A.zone.R=CALC.R;var S=span(A),mid=(A.u0+A.u1)/2,h=CALC.need/2;A.zone.u0=Math.round(Math.max(S.lo+1,mid-h));A.zone.u1=Math.round(Math.min(S.hi-1,mid+h))}else{C.Rset=C.Rset||{};C.Rset[k]=CALC.R}
  rebuildFP();$('#lmFxBa').value=Math.round(Math.min(360,+$('#lmFxCA').value));var o=$('#lmFxO');o.style.display='block';o.innerHTML='<b>📐 '+A.part.id+'</b>: R '+CALC.R+' mm uchun oraliq '+CALC.opt.pitch+' mm, eni '+CALC.opt.w+' mm o‘rnatildi'+(A.zone?', zona uzunligi '+CALC.need.toFixed(0)+' mm':'')+'. «Qo‘llash» ni bosing.';CALC=null;$('#lmFxCAp').disabled=true;list();draw();bend()};
 function refresh(ev){if(ev&&ev.target&&/lmFx(P|W|A)$/.test(ev.target.id)&&C.per){C.per=null;$('#lmFxO').style.display='none'}readUI();list();draw();bend()}
-['#lmFxP','#lmFxA','#lmFxW','#lmFxKf','#lmFxH','#lmFxE','#lmFxAm','#lmFxWv','#lmFxOn','#lmFxD','#lmFxDs','#lmFxDd','#lmFxDp','#lmFxSg','#lmFxBr','#lmFxGr','#lmFxGk'].forEach(function(q){$(q).oninput=refresh;$(q).onchange=refresh});
+['#lmFxMG','#lmFxMt','#lmFxMb','#lmFxMs2','#lmFxRf','#lmFxP','#lmFxA','#lmFxW','#lmFxKf','#lmFxH','#lmFxE','#lmFxAm','#lmFxWv','#lmFxOn','#lmFxD','#lmFxDs','#lmFxDd','#lmFxDp','#lmFxSg','#lmFxBr','#lmFxGr','#lmFxGk'].forEach(function(q){$(q).oninput=refresh;$(q).onchange=refresh});
 $('#lmFxAll').onclick=function(){C.sel={};list()};$('#lmFxNone').onclick=function(){C.sel={};FP.forEach(function(A){C.sel[key(A)]=false});list()};
 $('#lmFxBest').onclick=function(){readUI();if(!FP.length)return;var per={},rows=[],sw=false;if(LAT[C.kind]){C.kind='straight';$('#lmFxK').value='straight';sw=true;cards()}
  FP.forEach(function(A){if(C.sel&&C.sel[key(A)]===false)return;var o=optimize(A,C);per[key(A)]={pitch:o.pitch,w:o.w,kind:o.kind};
   rows.push('<b>'+A.part.id+(A.zone?' (zona)':'')+'</b>: oraliq '+o.pitch+' mm, eni '+o.w+' mm'+(o.n?', '+o.n+' kesik, '+(o.len/1000).toFixed(2)+' m':'')+' — '+(o.ok===false?'<span class=bad>':'')+o.why+(o.ok===false?'</span>':''))});
  C.per=per;C.grad='none';$('#lmFxGr').value='none';
- var o=$('#lmFxO');o.style.display='block';o.innerHTML='<b>✨ Tavsiya</b> — har bir detal uchun alohida: kesiklar chetdan chetga, buralish ≤ 1 %, tasmalar egilganda bir-biriga tegmaydi; shu shartlarda eng kam kesik.'+(sw?' Panjara naqshi 3 mm da ishonchsiz, shuning uchun to‘g‘ri kesikka o‘tkazildi.':'')+'<br>'+rows.join('<br>')+'<br><i>Radiusi nomaʼlum detallar uchun «Radius bo‘yicha hisob» dan foydalaning. Ma’qul bo‘lsa «Qo‘llash» ni bosing.</i>';
+ var o=$('#lmFxO');o.style.display='block';o.innerHTML='<b>✨ Tavsiya</b> — har bir detal uchun alohida: kesiklar chetdan chetga; sinmaslik sharti R_min = p·G·b/(1,1·τ·L) ≤ R/'+(C.sf||1.5)+' (konusda ikkala uchda); lamel eni b ≥ 1,0–1,2 mm; tasmalar egilganda bir-biriga tegmaydi; shu shartlarda eng kam kesik.'+(sw?' Panjara naqshi 3 mm da ishonchsiz, shuning uchun to‘g‘ri kesikka o‘tkazildi.':'')+'<br>'+rows.join('<br>')+'<br><i>Radiusi nomaʼlum detallar uchun «Radius bo‘yicha hisob» dan foydalaning. Ma’qul bo‘lsa «Qo‘llash» ni bosing.</i>';
  list();draw();bend()};
 $('#lmFxGo').onclick=function(){readUI();C.on=true;$('#lmFxOn').checked=true;save(G.id,C);bump();$('#lmFxS').textContent='Qo‘llandi — 3D, listlar va eksport yangilandi'};
 $('#lmFxOff').onclick=function(){C.on=false;$('#lmFxOn').checked=false;save(G.id,C);bump();$('#lmFxS').textContent='Asl kesiklar qaytarildi (zonalar saqlanib qoldi)'};
@@ -11436,6 +11458,101 @@ T$('#lmTgc').onclick=async function(){var GC=window.__lmGc;if(!GC){alert('G-code
 T$('#lmTx').onclick=function(){TC.style.display='none'};TC.onclick=function(e){if(e.target===TC)TC.style.display='none'};
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&TC.style.display==='flex'){e.stopPropagation();TC.style.display='none'}},true);
 $('#lmFxTB').onclick=function(){var A=FP[curIx];if(A&&A.part.thickness)T$('#lmTt').value=A.part.thickness;else if(MODEL&&MODEL.parts&&MODEL.parts[0]&&MODEL.parts[0].thickness)T$('#lmTt').value=MODEL.parts[0].thickness;T$('#lmTkf').value=C&&C.kerf||.2;TC.style.display='flex';setTimeout(tdraw,30)};
+/* ===== Egiluvchanlikni oshirish choralari (ilmiy ish, 2-bo'lim) ===== */
+function tips(A,r){var el=$('#lmFxTips');if(!el)return;if(!A||!r){el.innerHTML='';return}var t=A.part.thickness||3,ph=r.ph,o=[],sf=C.sf||1.5,RR=needR(A);
+ if(ph&&ph.ratio>1){var pn=r.pitch*Math.sqrt(1/ph.ratio);o.push('<b>Qadamni kamaytiring:</b> R_min ≈ p² ga proporsional — qadamni 2 marta kamaytirsangiz radius 4 marta kichrayadi, bikrlik 16 marta kamayadi. Shart uchun qadam ≈ '+Math.max(ph.bmin+(r.sw||.2),pn).toFixed(1)+' mm atrofida bo‘lsin.')}
+ if(ph&&ph.b<ph.bmin)o.push('<span class=bad><b>Lamel juda ingichka:</b> b = '+ph.b.toFixed(2)+' mm < '+ph.bmin.toFixed(1)+' mm — lazerda kuyib, mo‘rtlashadi. Qadamni oshiring yoki kesik enini kamaytiring.</span>');
+ if(ph&&ph.ratio>1){o.push('<b>Kesim uzunligi L ni oshiring</b> (hozir ≈ '+(r.Lm||C.seg||0).toFixed(0)+' mm): L 2 marta uzaysa, radius ham, bikrlik ham 2 marta kamayadi; panjarada ko‘prikchani 1,5–3 mm gacha qisqartiring.');
+  if(C.kind==='straight')o.push('<b>To‘lqinsimon yoki S-shakl kesim</b> sinab ko‘ring — lamelning ishchi uzunligi ortadi.');
+  if(t>3)o.push('<b>Yupqaroq fanera:</b> 3 mm fanera '+t+' mm ga nisbatan ancha yaxshi egiladi.');
+  o.push('<b>Juda kichik radius kerak bo‘lsa</b>, egishdan oldin suv yoki bug‘ bilan yumshating.')}
+ o.push('Kesimlarni <b>tashqi qatlam tolasiga perpendikulyar</b> joylashtiring.');o.push('Kuyish zonasini kamaytiring: kuchli havo puflash; kerak bo‘lsa quvvatni pasaytirib, <b>ikki o‘tishda</b> kesing.');
+ el.innerHTML='<b>💡 Egiluvchanlikni oshirish choralari</b>'+(ph&&ph.ratio!=null?' — '+(ph.ratio<=1?'<span class=ok>shart bajariladi: R_min '+ph.rm.toFixed(0)+' ≤ '+(RR[0]/sf).toFixed(0)+' mm</span>':'<span class=bad>shart bajarilmaydi: R_min '+ph.rm.toFixed(0)+' > '+(RR[0]/sf).toFixed(0)+' mm</span>'):' — <span class=mu>kerakli radius nomaʼlum: «Radius bo‘yicha hisob» da kiriting</span>')+'<ul style="margin:4px 0 0 18px;padding:0">'+o.map(function(x){return'<li>'+x+'</li>'}).join('')+'</ul>'}
+/* ===== KESIK KONUS YARATGICH (ilmiy ish, 3-5 bo'limlar) ===== */
+var KC=document.createElement('div');KC.id='lmFxK2';KC.innerHTML='<div class=bx><h3 style="margin:0 0 4px;font-size:16px">🔺 Kesik konus — kerf naqsh bilan yopish</h3><p class=mu style=margin:0>Kesik konus bir egrilikdagi yuza: yoyilma (sektor) radial kerf naqsh bilan egiladi. Kesimlar konus yasovchilari bo‘ylab, shaxmat tartibida; chetlarda naqshsiz tasma va tishchalar, ustki va pastki halqalar, chok ustqo‘yma plastinasi.</p>'+
+'<div class=row><label>Kichik radius R₁ <input type=number id=kcR1 min=5 step=1 value=50> mm</label><label>Katta radius R₂ <input type=number id=kcR2 min=10 step=1 value=100> mm</label><label>Balandlik h <input type=number id=kcH min=10 step=1 value=150> mm</label><label>Faner t <input type=number id=kcT min=1 max=8 step=0.5 value=3> mm</label></div>'+
+'<div class=row><label>Kesim uzunligi L <input type=number id=kcL min=8 max=120 step=1 value=30> mm</label><label>ko‘prikcha <input type=number id=kcB min=1 max=8 step=0.5 value=2.5> mm</label><label>Kichik uchdagi qadam <input type=number id=kcP min=0 max=10 step=0.1 value=0> mm</label><span class=mu>0 — avtomatik (≈0,87·t)</span><label>lazer nuri <input type=number id=kcK min=0.05 max=0.6 step=0.01 value=0.2> mm</label></div>'+
+'<div class=row><label>Naqshsiz tasma <input type=number id=kcBand min=5 max=15 step=0.5 value=8> mm</label><label>Tishchalar (har halqada) <input type=number id=kcTabs min=3 max=24 step=1 value=8></label><label>Halqa eni <input type=number id=kcRw min=8 max=40 step=1 value=16> mm</label><label>Yoyilma bo‘laklari <input type=number id=kcN min=1 max=6 step=1 value=1></label><label><input type=checkbox id=kcRib> ichki ribalar (h &gt; 150 mm)</label></div>'+
+'<div style="display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:10px"><canvas id=kcC style="width:100%;height:360px;border:1px solid #e3dccd;border-radius:8px;background:#fff;display:block"></canvas><div id=kcTab style="font-size:12.5px"></div></div>'+
+'<div class=row><span class=mu id=kcS></span><span style=flex:1></span><button class=pri id=kcSvg>SVG</button><button id=kcDxf>DXF</button><button id=kcGc>G-code</button><button id=kcX>Yopish</button></div></div>';
+document.body.appendChild(KC);css.textContent+='#lmFxK2{position:fixed;inset:0;z-index:10000;background:#0008;display:none;align-items:center;justify-content:center;padding:12px}#lmFxK2 .bx{background:#fffdf8;color:#1d1b17;width:min(1040px,100%);max-height:94vh;overflow:auto;border-radius:14px;padding:16px;font:13px/1.45 system-ui,sans-serif}#lmFxK2 input[type=number]{font:inherit;padding:4px 6px;border:1px solid #d8cfbe;border-radius:7px;width:70px}#lmFxK2 .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}#lmFxK2 button{font:inherit;border:1px solid #d8cfbe;background:#fff;color:#1d1b17;border-radius:8px;padding:7px 12px;cursor:pointer}#lmFxK2 .pri{background:#e2a812;border-color:#e2a812;font-weight:700}#lmFxK2 .mu{color:#6d665a;font-size:12px}#lmFxK2 .ok{color:#2d7a35;font-weight:600}#lmFxK2 .bad{color:#b3261e;font-weight:600}#kcTab table{border-collapse:collapse;width:100%}#kcTab td{padding:3px 4px;border-bottom:1px solid #f0eadf}#kcTab td:last-child{text-align:right;font-variant-numeric:tabular-nums}@media(max-width:760px){#lmFxK2 .bx>div[style*=grid]{grid-template-columns:1fr!important}}#lmFxTips{margin:8px 0;padding:8px 12px;border:1px solid #e3dccd;border-radius:10px;background:#fff;font-size:12.5px;line-height:1.5}';
+function K$(q){return KC.querySelector(q)}
+function arcPts(r,a0,a1,n){var o=[];n=n||Math.max(8,Math.ceil(Math.abs(a1-a0)*r/2));for(var i=0;i<=n;i++){var a=a0+(a1-a0)*i/n;o.push(P(r*Math.cos(a),r*Math.sin(a)))}return o}
+function coneCalc(){var v=function(id,d){var x=+K$(id).value;return x>0?x:d},R1=v('#kcR1',50),R2=v('#kcR2',100),h=v('#kcH',150),t=v('#kcT',3),L=v('#kcL',30),br=v('#kcB',2.5),kf=v('#kcK',.2),band=v('#kcBand',8),pin=+K$('#kcP').value||0,cc={G:C&&C.G||700,tau:C&&C.tau||8,beta:C&&C.beta||.2},sf=C&&C.sf||1.5;
+ if(R2<R1){var z=R1;R1=R2;R2=z}var o={R1:R1,R2:R2,h:h,t:t,L:L,br:br,kf:kf,band:band,err:''};if(R2-R1<.5){o.err='R₂ − R₁ juda kichik: bu silindr — oddiy to‘g‘ri kerf ishlating';return o}
+ o.s=Math.sqrt(h*h+(R2-R1)*(R2-R1));o.rho2=R2*o.s/(R2-R1);o.rho1=o.rho2-o.s;o.alpha=360*(R2-R1)/o.s;o.tg=(R2-R1)/h;o.Rk1=o.rho1*o.tg;o.Rk2=o.rho2*o.tg;o.psi=Math.asin((R2-R1)/o.s);
+ o.bmin=bmin(t);var p=pin>0?pin:Math.max(o.bmin+kf+.2,Math.round(.87*t*10)/10),okp=false;
+ for(var it=0;it<80;it++){o.dth=p/o.rho1;o.p1=p;o.p2=o.rho2*o.dth;o.half=o.rho2/o.rho1>2;o.p2e=o.half?o.p2/2:o.p2;o.rm1=rMin(t,o.p1,kf,L,cc);o.rm2=rMin(t,o.p2e,kf,L,cc);
+  if(!o.half&&o.rm2>o.Rk2/sf){o.half=true;o.p2e=o.p2/2;o.rm2=rMin(t,o.p2e,kf,L,cc)}
+  okp=o.rm1<=o.Rk1/sf&&o.rm2<=o.Rk2/sf;if(okp||pin>0||p-kf<=o.bmin+.05)break;p=Math.round((p-.1)*10)/10}
+ o.ok=okp;o.b=lamB(t,o.p1,kf);o.sf=sf;o.n=Math.max(1,Math.min(6,Math.round(+K$('#kcN').value||1)));
+ o.lines=Math.round(o.alpha*Math.PI/180/o.dth);o.K=stiff(t,(o.p1+o.p2)/2,kf,L,o.s,cc);
+ if(o.b<o.bmin)o.err='lamel eni b = '+o.b.toFixed(2)+' mm < '+o.bmin.toFixed(1)+' mm — qadamni oshiring';
+ return o}
+function coneParts(o){var parts=[],t=o.t,band=o.band,segA=o.alpha*Math.PI/180/o.n,T=Math.max(3,+K$('#kcTabs').value||8),tpS=Math.max(1,Math.round(T/o.n)),tw=8,tl=t/Math.cos(o.psi)+.6,rw=+K$('#kcRw').value||16,
+ a0=Math.PI/2-segA/2,a1=Math.PI/2+segA/2,dl=band/o.rho1,tabA=[];for(var j=0;j<tpS;j++)tabA.push(a0+dl+(segA-2*dl)*(j+.5)/tpS);
+ function edge(r,from,to,out){var o2=[],dir=to>from?1:-1,list=tabA.slice().sort(function(a,b){return dir*(a-b)}),cur=from;list.forEach(function(a){var hw=(tw/2)/r,b0=a-dir*hw,b1=a+dir*hw,r2=r+out*tl;o2=o2.concat(arcPts(r,cur,b0));o2=o2.concat(arcPts(r2,b0,b1,6));cur=b1});return o2.concat(arcPts(r,cur,to))}
+ for(var sgi=0;sgi<o.n;sgi++){var outer=edge(o.rho2,a0,a1,1).concat(edge(o.rho1,a1,a0,-1)),cuts=[],eng=[];
+  var lat=function(ang,rs,re,k){var per=o.L+o.br,y=rs+(k%2?per/2:0)-per;for(;y<re;y+=per){var c0=Math.max(y,rs),c1=Math.min(y+o.L,re);if(c1-c0<Math.min(6,o.L/3))continue;cuts.push([P(c0*Math.cos(ang),c0*Math.sin(ang)),P(c1*Math.cos(ang),c1*Math.sin(ang))])}};
+  var rs=o.rho1+band,re=o.rho2-band,nL=Math.floor((segA-2*dl)/o.dth),st=a0+dl+((segA-2*dl)-nL*o.dth)/2;
+  for(var k=0;k<=nL;k++){var ang=st+k*o.dth;lat(ang,rs,re,k);if(o.half&&k<nL)lat(ang+o.dth/2,(o.rho1+o.rho2)/2,re,k+1)}
+  // seam bands: no cuts closer than band to side edges (dl at inner radius already); label on inner band
+  var lb=text('KONUS '+(sgi+1)+'/'+o.n,0,0,Math.min(4,band*.55));lb.lines.forEach(function(l){eng.push(l.map(function(p){var x=X(p)-lb.w/2,y=-Y(p);return P(x,y+o.rho1+band*.25+Math.min(4,band*.55))}))});
+  parts.push({name:'Konus yoyilmasi '+(sgi+1),outer:outer,holes:[],cuts:cuts,eng:eng})}
+ // chok ustqo'yma plastinalari
+ var dS=2*band/o.rho1*o.rho1;for(var q=0;q<o.n;q++){var w2=band*2-1,pl=[P(-w2/2,o.rho1+band*.6),P(w2/2,o.rho1+band*.6),P(w2/2*o.rho2/o.rho1,o.rho2-band*.6),P(-w2/2*o.rho2/o.rho1,o.rho2-band*.6)],lb2=text('CHOK '+(q+1),0,0,3.5);
+  parts.push({name:'Chok plastinasi '+(q+1),outer:pl,holes:[],cuts:[],eng:lb2.lines.map(function(l){return l.map(function(p){return P(Y(p)-1.75,o.rho1+band+8+X(p))})})})}
+ // halqalar: tishcha teshiklari phi = theta*360/alpha, radiusi o'rta qatlam bo'yicha
+ [['YUQORI',o.R1],['PAST',o.R2]].forEach(function(rg){var Rm=rg[1],ro=Rm+rw/2,ri=Math.max(3,Rm-rw/2),holes=[],sl=t/Math.cos(o.psi)+.25,hw=(tw+.3)/2;holes.push(arcPts(ri,2*Math.PI,0,72));
+  for(var sg=0;sg<o.n;sg++)tabA.forEach(function(a){var th=(a-a0)+sg*segA,phi=th*2*Math.PI/(o.alpha*Math.PI/180)*1,ang=phi,ca=Math.cos(ang),sa=Math.sin(ang),r0=Rm-sl/2,r1=Rm+sl/2;
+   holes.push([P(r0*ca-hw*sa,r0*sa+hw*ca),P(r1*ca-hw*sa,r1*sa+hw*ca),P(r1*ca+hw*sa,r1*sa-hw*ca),P(r0*ca+hw*sa,r0*sa-hw*ca),P(r0*ca-hw*sa,r0*sa+hw*ca)])});
+  var lb3=text('HALQA '+rg[0],0,0,Math.min(4,rw*.3));parts.push({name:'Halqa — '+rg[0].toLowerCase(),outer:arcPts(ro,0,2*Math.PI,96),holes:holes,cuts:[],eng:lb3.lines.map(function(l){return l.map(function(p){return P(X(p)-lb3.w/2,-(Rm+Y(p)-2))})})})});
+ // ribalar (ixtiyoriy): yasovchi bo'ylab trapetsiya, halqalar orasida
+ if(K$('#kcRib').checked){for(var ri2=0;ri2<3;ri2++){var Ls=o.s-2*t,lb4=text('RIBA '+(ri2+1),0,0,4);parts.push({name:'Riba '+(ri2+1),outer:[P(0,0),P(12,0),P(12,Ls),P(0,Ls)],holes:[],cuts:[],eng:lb4.lines.map(function(l){return l.map(function(p){return P(4+Y(p),8+X(p))})})})}}
+ return parts}
+function bboxP(pt){return bbox([pt.outer])}
+function pack(parts,SW,SH){var M=6,g=5,sheets=[],cur=null,x=0,y=0,rowH=0,warn='';
+ parts.map(function(pt){var bb=bboxP(pt),w=bb.x1-bb.x0,h=bb.y1-bb.y0,rot=false;if((w>SW-2*M&&h<=SW-2*M&&w<=SH-2*M)||(h>SH-2*M&&w<=SH-2*M&&h<=SW-2*M)){rot=true;var z=w;w=h;h=z}return{pt:pt,bb:bb,w:w,h:h,rot:rot}}).sort(function(a,b){return b.h-a.h}).forEach(function(it){
+  if(it.w>SW-2*M||it.h>SH-2*M)warn='«'+it.pt.name+'» '+it.w.toFixed(0)+'×'+it.h.toFixed(0)+' mm listga sig‘maydi — bo‘laklar sonini oshiring';
+  if(!cur||x+it.w>SW-M){x=M;y=cur?y+rowH+g:M;rowH=0}if(!cur||y+it.h>SH-M){cur={parts:[]};sheets.push(cur);x=M;y=M;rowH=0}
+  var bb=it.bb,f=it.rot?function(p){return P(x+(bb.y1-Y(p)),y+(bb.x1-X(p)))}:function(p){return P(x+(X(p)-bb.x0),y+(bb.y1-Y(p)))},F=function(l){return l.map(f)};
+  cur.parts.push({name:it.pt.name,outer:F(it.pt.outer),holes:it.pt.holes.map(F),cuts:it.pt.cuts.map(F),eng:it.pt.eng.map(F)});x+=it.w+g;rowH=Math.max(rowH,it.h)});
+ return{sheets:sheets,warn:warn}}
+var KCS=null;
+function kcDraw(){var o=coneCalc(),T=K$('#kcTab'),sf=o.sf;if(o.err&&!o.s){T.innerHTML='<span class=bad>'+o.err+'</span>';return}
+ var row=function(a,b){return'<tr><td>'+a+'</td><td>'+b+'</td></tr>'},f1=function(v){return v.toFixed(1).replace('.',',')};
+ T.innerHTML='<table>'+row('Yasovchi uzunligi s',f1(o.s)+' mm')+row('Ichki radius ρ₁',f1(o.rho1)+' mm')+row('Tashqi radius ρ₂',f1(o.rho2)+' mm')+row('Sektor burchagi α','≈ '+f1(o.alpha)+'°')+row('Kerakli radius, kichik uchda',f1(o.Rk1)+' mm')+row('Kerakli radius, katta uchda',f1(o.Rk2)+' mm')+row('Burchak qadami Δθ','≈ '+(o.dth*180/Math.PI).toFixed(2).replace('.',',')+'°')+row('Qadam p, kichik uchda','≈ '+f1(o.p1)+' mm')+row('Qadam p, katta uchda','≈ '+f1(o.p2)+' mm'+(o.half?' → '+f1(o.p2e)+' (qo‘sh. chiziqlar)':''))+row('Radial chiziqlar soni','≈ '+o.lines+(o.half?' + '+o.lines+' (yarim)':''))+
+  row('R_min kichik uchda','<span class='+(o.rm1<=o.Rk1/sf?'ok':'bad')+'>≈ '+o.rm1.toFixed(0)+' mm</span> (ruxsat: '+(o.Rk1/sf).toFixed(0)+')')+row('R_min katta uchda','<span class='+(o.rm2<=o.Rk2/sf?'ok':'bad')+'>≈ '+o.rm2.toFixed(0)+' mm</span> (ruxsat: '+(o.Rk2/sf).toFixed(0)+')')+row('Lamel eni b (kichik uch)',f1(o.b)+' mm'+(o.b<o.bmin?' <span class=bad>&lt; '+o.bmin.toFixed(1)+'</span>':''))+row('Sharnir bikrligi K','≈ '+o.K.toFixed(0)+' N·mm/rad')+'</table>'+
+  '<p style="margin:6px 0 0" class='+(o.ok?'ok':'bad')+'>'+(o.ok?'Shart ikkala uchda bajariladi.':'Shart bajarilmaydi — L ni oshiring, qadamni kamaytiring yoki yupqaroq faner oling.')+'</p>'+(o.err?'<p class=bad style="margin:4px 0 0">'+o.err+'</p>':'')+(o.h>150&&!K$('#kcRib').checked?'<p class=mu style="margin:4px 0 0">h &gt; 150 mm: yasovchi bo‘ylab 2–3 ta riba qo‘shish tavsiya qilinadi.</p>':'')+'<p class=mu style="margin:4px 0 0">Material xossalari taxminiy — avval kichik sinov bo‘lagini kesib ko‘ring.</p>';
+ var parts=coneParts(o),pk=pack(parts,590,390);KCS={o:o,pk:pk};
+ var cv=K$('#kcC'),dpr=window.devicePixelRatio||1,W=cv.clientWidth,H=cv.clientHeight;cv.width=W*dpr;cv.height=H*dpr;var c=cv.getContext('2d');c.setTransform(dpr,0,0,dpr,0,0);c.clearRect(0,0,W,H);
+ var n=pk.sheets.length,cols=Math.min(n,2),rows=Math.ceil(n/cols),cw=(W-10)/cols,chh=(H-10)/rows,s=Math.min((cw-8)/590,(chh-18)/390);
+ pk.sheets.forEach(function(sh,i){var ox=5+(i%cols)*cw,oy=5+Math.floor(i/cols)*chh+14;c.fillStyle='#6d665a';c.font='11px system-ui';c.fillText('List '+(i+1)+' · 590×390',ox,oy-3);c.strokeStyle='#bbb';c.setLineDash([4,3]);c.strokeRect(ox,oy,590*s,390*s);c.setLineDash([]);
+  var pl=function(l,cl){c.beginPath();l.forEach(function(p,k){var x=ox+X(p)*s,y=oy+Y(p)*s;k?c.lineTo(x,y):c.moveTo(x,y)});if(cl)c.closePath();c.stroke()};
+  sh.parts.forEach(function(pt){c.fillStyle='#f3e4c6';c.beginPath();pt.outer.forEach(function(p,k){var x=ox+X(p)*s,y=oy+Y(p)*s;k?c.lineTo(x,y):c.moveTo(x,y)});c.closePath();pt.holes.forEach(function(hh){hh.forEach(function(p,k){var x=ox+X(p)*s,y=oy+Y(p)*s;k?c.lineTo(x,y):c.moveTo(x,y)});c.closePath()});c.fill('evenodd');
+   c.strokeStyle='#c0392b';c.lineWidth=.8;pl(pt.outer,1);pt.holes.forEach(function(hh){pl(hh,1)});c.lineWidth=.5;pt.cuts.forEach(function(l){pl(l,0)});c.strokeStyle='#1f5fbf';pt.eng.forEach(function(l){pl(l,0)})})});
+ var L=0;pk.sheets.forEach(function(sh){sh.parts.forEach(function(pt){[pt.outer.concat([pt.outer[0]])].concat(pt.holes,pt.cuts).forEach(function(l){for(var i=1;i<l.length;i++)L+=Math.hypot(X(l[i])-X(l[i-1]),Y(l[i])-Y(l[i-1]))})})});
+ K$('#kcS').innerHTML=n+' list · '+parts.length+' detal · kesish ≈ '+(L/1000).toFixed(1)+' m'+(pk.warn?' · <span class=bad>⚠ '+pk.warn+'</span>':'')}
+['#kcR1','#kcR2','#kcH','#kcT','#kcL','#kcB','#kcP','#kcK','#kcBand','#kcTabs','#kcRw','#kcN','#kcRib'].forEach(function(q){K$(q).oninput=kcDraw;K$(q).onchange=kcDraw});
+function kcName(ext,i){var o=KCS.o;return'kesik_konus_R'+o.R1+'-'+o.R2+'_h'+o.h+'_'+o.t+'mm'+(i!=null?'_list'+(i+1):'')+'.'+ext}
+function kcSvg(sh){var f=function(v){return Math.round(v*1000)/1000},pl=function(l,cl){return'<'+(cl?'polygon':'polyline')+' points="'+l.map(function(p){return f(X(p))+','+f(Y(p))}).join(' ')+'"/>'},e=[],ic=[],oc=[];
+ sh.parts.forEach(function(pt){pt.eng.forEach(function(l){e.push(pl(l,0))});pt.cuts.forEach(function(l){ic.push(pl(l,0))});pt.holes.forEach(function(l){ic.push(pl(l,1))});oc.push(pl(pt.outer,1))});
+ return'<?xml version="1.0" encoding="UTF-8"?>\n<svg xmlns="http://www.w3.org/2000/svg" width="590mm" height="390mm" viewBox="0 0 590 390">\n<g id="gravyura" fill="none" stroke="#0000FF" stroke-width="0.1">'+e.join('')+'</g>\n<g id="ichki_kesish" fill="none" stroke="#FF0000" stroke-width="0.1">'+ic.join('')+'</g>\n<g id="tashqi_kesish" fill="none" stroke="#FF0000" stroke-width="0.1">'+oc.join('')+'</g>\n</svg>'}
+function kcDxf(sh){var o=['0','SECTION','2','HEADER','9','$INSUNITS','70','4','0','ENDSEC','0','SECTION','2','ENTITIES'],H=390;
+ function pl(l,lay,cl){o.push('0','POLYLINE','8',lay,'66','1','70',cl?'1':'0');(cl&&closed(l)?l.slice(0,-1):l).forEach(function(p){o.push('0','VERTEX','8',lay,'10',X(p).toFixed(4),'20',(H-Y(p)).toFixed(4))});o.push('0','SEQEND')}
+ sh.parts.forEach(function(pt){pt.eng.forEach(function(l){pl(l,'GRAVYURA',0)});pt.cuts.forEach(function(l){pl(l,'ICHKI_KESISH',0)});pt.holes.forEach(function(l){pl(l,'ICHKI_KESISH',1)});pl(pt.outer,'TASHQI_KESISH',1)});o.push('0','ENDSEC','0','EOF');return o.join('\r\n')}
+async function kcOut(kind){if(!KCS)kcDraw();var sh=KCS.pk.sheets,GC=window.__lmGc,files=[],c=null;if(kind==='gc'){if(!GC){alert('G-code moduli topilmadi');return}c=await GC.ask();if(!c)return}
+ for(var i=0;i<sh.length;i++){var nm=kcName(kind==='gc'?'gcode':kind,sh.length>1?i:null),d;
+  if(kind==='svg')d=new Blob([kcSvg(sh[i])],{type:'image/svg+xml'});else if(kind==='dxf')d=new Blob([kcDxf(sh[i])],{type:'application/dxf'});
+  else{var g=await GC.sheet({width:590,height:390,parts:sh[i].parts.map(function(pt){return{id:pt.name,imgs:[],engrave:pt.eng,slits:pt.cuts,regions:[{outer:pt.outer,holes:pt.holes}]}})},c,'Kesik konus — list '+(i+1));d=new Blob([g.text],{type:'text/plain'})}
+  files.push({name:nm,data:d})}
+ if(files.length===1)dl(files[0].name,files[0].data);else if(GC)GC.save(kcName('zip').replace('.zip','_'+kind+'.zip'),await GC.zip(files));else files.forEach(function(f){dl(f.name,f.data)})}
+K$('#kcSvg').onclick=function(){kcOut('svg')};K$('#kcDxf').onclick=function(){kcOut('dxf')};K$('#kcGc').onclick=function(){kcOut('gc')};
+K$('#kcX').onclick=function(){KC.style.display='none'};KC.onclick=function(e){if(e.target===KC)KC.style.display='none'};
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&KC.style.display==='flex'){e.stopPropagation();KC.style.display='none'}},true);
+function kcOpen(){var A=FP[curIx];if(A&&A.part.thickness)K$('#kcT').value=A.part.thickness;if(C)K$('#kcK').value=C.kerf||.2;KC.style.display='flex';setTimeout(kcDraw,30)}
+window.__lmFlexCone=kcOpen;$('#lmFxKB').onclick=kcOpen;
+
 window.__lmFlexCard=function(){TC.style.display='flex';setTimeout(tdraw,30)};
 window.__lmFlex=open;window.__lmFlexApi={analyze:analyze,rebuild:rebuild,applyFlex:applyFlex,cfg:cfg};
 function add(){if(document.getElementById('lmFlexBtn'))return;var t=document.getElementById('lmSellBtn')||document.getElementById('lmMarkBtn');if(!t)return;var b=document.createElement('button');b.id='lmFlexBtn';b.type='button';b.className=t.className;b.textContent='〰 Egiluvchan qism';b.title='Egiluvchan qoplama detallari: kesiklar orasi, chiziq eni, teshik va naqsh';b.onclick=open;t.parentNode.insertBefore(b,t.nextSibling)}setInterval(add,900);
