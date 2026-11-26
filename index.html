@@ -12532,7 +12532,7 @@ function roles(){var K=window.__lmImpParse.keys(RAW).slice(0,24),h='';ROLE={};K.
  $('#lmImpR').innerHTML=h;[].forEach.call($('#lmImpR').querySelectorAll('select'),function(s){s.onchange=function(){ROLE[K[+s.dataset.rk].key]=s.value;run()}})}
 function show(){m.style.display='flex';renderList()}function hide(){m.style.display='none'}
 $('#lmImpX').onclick=hide;m.onclick=function(e){if(e.target===m)hide()};document.addEventListener('keydown',function(e){if(e.key==='Escape'&&m.style.display==='flex'){e.stopPropagation();hide()}},true);
-var dz=$('#lmImpDrop');dz.onclick=function(){$('#lmImpF').click()};$('#lmImpF').onchange=function(){var f=this.files&&this.files[0];if(f)readFile(f);this.value=''};
+var dz=$('#lmImpDrop');(function(){var fi=$('#lmImpF'),touch=(window.matchMedia&&matchMedia('(pointer:coarse)').matches)||/Android|iPhone|iPad/i.test(navigator.userAgent);if(touch)fi.removeAttribute('accept');else fi.setAttribute('accept','.dxf,.svg,.pdf,.cdr')})();dz.onclick=function(){$('#lmImpF').click()};$('#lmImpF').onchange=function(){var f=this.files&&this.files[0];if(f)readFile(f);this.value=''};
 ['dragenter','dragover'].forEach(function(t){dz.addEventListener(t,function(e){e.preventDefault();dz.classList.add('over')})});['dragleave','drop'].forEach(function(t){dz.addEventListener(t,function(e){e.preventDefault();dz.classList.remove('over')})});dz.addEventListener('drop',function(e){var f=e.dataTransfer&&e.dataTransfer.files[0];if(f)readFile(f)});
 // butun sahifaga sudrab tashlash
 var hint=document.createElement('div');hint.id='lmImpDragHint';hint.textContent='📂 DXF / SVG / PDF faylni qo‘yib yuboring — import qilinadi';document.body.appendChild(hint);var dc=0;
