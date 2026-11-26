@@ -11405,7 +11405,8 @@ function zoneA(pt,z,i){var rs=rings(pt);if(!rs.length)return null;var bb=bbox(rs
  return{part:pt,bb:bb,rs:rs,R:z.R>0?+z.R:null,mode:v?'v':'h',u0:u0,u1:u1,zone:z,zi:i,key:pt.id+'#z'+i}}
 function flexParts(model,c){c=c||{};var o=[];(model&&model.parts||[]).forEach(function(pt){var A=analyze(pt);if(A){A.key=pt.id;if(!A.R&&c.Rset&&c.Rset[A.key]>0)A.R=+c.Rset[A.key];o.push(A)}});
  (c.zones||[]).forEach(function(z,i){var pt=(model&&model.parts||[]).find(function(p){return p.id===z.part});if(!pt)return;var A=zoneA(pt,z,i);if(A)o.push(A)});return o}
-function applyFlex(id,model){var c=cfg(id);if(!c.on||!model||!model.parts)return model;
+function applyFlex(id,model){var r=applyFlex0(id,model);try{if(window.__lmFxAtt)r=window.__lmFxAtt.apply(id,r)}catch(e){console.warn('lm-fxatt',e)}return r}
+function applyFlex0(id,model){var c=cfg(id);if(!c.on||!model||!model.parts)return model;
  var parts=model.parts.map(function(pt){var q=null,cp=function(){if(!q){q={};for(var k in pt)q[k]=pt[k];q.info=(pt.info||[]).slice()}return q};
   var A=(c.sel&&c.sel[pt.id]===false)?null:analyze(pt);
   if(A){A.key=pt.id;if(!A.R&&c.Rset&&c.Rset[A.key]>0)A.R=+c.Rset[A.key];var r=rebuild(A,c);cp().cutLines=r.lines;
@@ -11426,7 +11427,7 @@ css.textContent+='#lmFxBt2{display:grid;grid-template-columns:repeat(auto-fill,m
 '#lmFxT{position:fixed;inset:0;z-index:10000;background:#0008;display:none;align-items:center;justify-content:center;padding:12px}#lmFxT .bx{background:#fffdf8;color:#1d1b17;width:min(900px,100%);max-height:94vh;overflow:auto;border-radius:14px;padding:16px;font:13px/1.45 system-ui,sans-serif}#lmFxT input[type=number],#lmFxT input[type=text]{font:inherit;padding:4px 6px;border:1px solid #d8cfbe;border-radius:7px;width:78px}#lmFxT input[type=text]{width:130px}#lmFxT .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}#lmFxT button{font:inherit;border:1px solid #d8cfbe;background:#fff;color:#1d1b17;border-radius:8px;padding:7px 12px;cursor:pointer}#lmFxT .pri{background:#e2a812;border-color:#e2a812;font-weight:700}#lmFxTC{width:100%;height:340px;border:1px solid #e3dccd;border-radius:8px;background:#fff;display:block}#lmFxT .mu{color:#6d665a;font-size:12px}';
 var KINDS=[['straight','To‘g‘ri','chetdan chetga'],['sine','To‘lqin','chetdan chetga'],['zigzag','Zigzag','chetdan chetga'],['bow','Yoy','chetdan chetga'],['chevron','Romb burchak','chetdan chetga'],['notch','Markazda V','chetdan chetga'],['dip','Chuqurcha','chetdan chetga'],['diag','Qiya','chetdan chetga'],['herring','Archa','chetdan chetga'],['key','Meandr','chetdan chetga'],['dash','Shtrixlar','panjara'],['lens','Ko‘z','panjara'],['xwave','X to‘lqin','panjara'],['hook','S ilmoq','panjara'],['hex','Olti burchak','panjara'],['auxetic','Auksetik','2 tomonga'],['spiral','Spirallar','2 tomonga']];
 var m=document.createElement('div');m.id='lmFx';m.className='simple';m.innerHTML='<div class=bx><h3>〰 Egiluvchan qism — kesiklarni sozlash</h3><p class=mu style=margin:0>Egiluvchan detallar (tasma, qobiq, konus) avtomatik topiladi; istalgan boshqa detalga esa <b>zona</b> qo‘shish mumkin. Har bir kesik detalni chetdan chetga kesib o‘tadi: bir uchi chetga ochiq, ikkinchisi teshik bilan tugaydi. Kesik qancha keng bo‘lsa, shuncha kichik radiusga egiladi.</p>'+
-'<div class=row><label><input type=checkbox id=lmFxOn> <b>Qayta ishlashni yoqish</b></label><span class=mu id=lmFxG></span><span style=flex:1></span><span class=seg><button id=lmFxMs class=on>Oddiy</button><button id=lmFxMa>Kengaytirilgan</button></span><button id=lmFxTB title="Fanerga kesib sinash uchun turli oraliq va enlar">🧪 Sinov kartasi</button><button id=lmFxKB title="Kesik konus yoyilmasi: radial kerf, halqalar va tishchalar">🔺 Kesik konus</button></div>'+
+'<div class=row><label><input type=checkbox id=lmFxOn> <b>Qayta ishlashni yoqish</b></label><span class=mu id=lmFxG></span><span style=flex:1></span><span class=seg><button id=lmFxMs class=on>Oddiy</button><button id=lmFxMa>Kengaytirilgan</button></span><button id=lmFxTB title="Fanerga kesib sinash uchun turli oraliq va enlar">🧪 Sinov kartasi</button><button id=lmFxAtB title="Tayyor egiluvchan tasmani disk, asos va qopqoqqa tishcha-tirqish bilan ulash">🔗 Korpusga biriktirish</button><button id=lmFxKB title="Kesik konus yoyilmasi: radial kerf, halqalar va tishchalar">🔺 Kesik konus</button></div>'+
 '<b>Egilish turi</b> <span class=mu>— nima yasamoqchisiz? Tanlasangiz, mos kesiklar ✓ bilan belgilanadi</span><div id=lmFxBt2></div><div id=lmFxBn class=mu style="display:none;margin:4px 0 6px;padding:6px 10px;background:#fbf1d4;border-radius:8px;color:#1d1b17"></div><b>Kesik turi</b><div id=lmFxCards></div><select id=lmFxK style=display:none>'+KINDS.map(function(k){return'<option value='+k[0]+'>'+k[1]+'</option>'}).join('')+'</select>'+
 '<div class=row><label>Chiziqlar orasi <input type=number id=lmFxP min=1 max=20 step=0.1> mm</label><label><input type=checkbox id=lmFxA> avtomatik</label><label><b>Kesik eni</b> <input type=number id=lmFxW min=0 max=4 step=0.05> mm</label><label class=adv>lazer nuri eni <input type=number id=lmFxKf min=0.05 max=0.6 step=0.01> mm</label><span class=mu>tegish radiusi ≈ qalinlik × oraliq ÷ eni</span></div>'+
 '<div class="row adv"><label>Panjara kesigi <input type=number id=lmFxSg min=6 max=80 step=1> mm</label><label>ko‘prik <input type=number id=lmFxBr min=1 max=10 step=0.1> mm</label><label>Uchidagi teshik ⌀ <input type=number id=lmFxH min=0 max=4 step=0.1> mm</label><label>Yopiq uchdan chetgacha <input type=number id=lmFxE min=1.5 max=10 step=0.1> mm</label><label>To‘lqin balandligi <input type=number id=lmFxAm min=0.5 max=5 step=0.1> mm</label><label>To‘lqin uzunligi <input type=number id=lmFxWv min=4 max=80 step=1> mm</label></div>'+
@@ -11607,6 +11608,7 @@ T$('#lmTgc').onclick=async function(){var GC=window.__lmGc;if(!GC){alert('G-code
  tout(D,async function(d){var sp={id:'sinov',imgs:[],engrave:d.eng,slits:d.cut,regions:d.outs.map(function(o){return{outer:o,holes:[]}})};var g=await GC.sheet({width:d.W,height:d.H,parts:[sp]},c,'Egiluvchan kesik sinov kartasi ('+d.nm+') '+d.t+' mm');return new Blob([g.text],{type:'text/plain'})},'gcode')};
 T$('#lmTx').onclick=function(){TC.style.display='none'};TC.onclick=function(e){if(e.target===TC)TC.style.display='none'};
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&TC.style.display==='flex'){e.stopPropagation();TC.style.display='none'}},true);
+$('#lmFxAtB').onclick=function(){m.style.display='none';if(window.__lmFxAtt)window.__lmFxAtt.open()};
 $('#lmFxTB').onclick=function(){var A=FP[curIx];if(A&&A.part.thickness)T$('#lmTt').value=A.part.thickness;else if(MODEL&&MODEL.parts&&MODEL.parts[0]&&MODEL.parts[0].thickness)T$('#lmTt').value=MODEL.parts[0].thickness;T$('#lmTkf').value=C&&C.kerf||.2;TC.style.display='flex';setTimeout(tdraw,30)};
 /* ===== Egiluvchanlikni oshirish choralari (ilmiy ish, 2-bo'lim) ===== */
 function tips(A,r){var el=$('#lmFxTips');if(!el)return;if(!A||!r){el.innerHTML='';return}var t=A.part.thickness||3,ph=r.ph,o=[],sf=C.sf||1.5,RR=needR(A);
@@ -11704,8 +11706,210 @@ function kcOpen(){var A=FP[curIx];if(A&&A.part.thickness)K$('#kcT').value=A.part
 window.__lmFlexCone=kcOpen;$('#lmFxKB').onclick=kcOpen;
 
 window.__lmFlexCard=function(){TC.style.display='flex';setTimeout(tdraw,30)};
-window.__lmFlex=open;window.__lmFlexApi={analyze:analyze,rebuild:rebuild,applyFlex:applyFlex,cfg:cfg};
+window.__lmFlex=open;window.__lmFlexApi={analyze:analyze,rebuild:rebuild,applyFlex:applyFlex,applyFlex0:applyFlex0,cfg:cfg};
 function add(){if(document.getElementById('lmFlexBtn'))return;var t=document.getElementById('lmSellBtn')||document.getElementById('lmMarkBtn');if(!t)return;var b=document.createElement('button');b.id='lmFlexBtn';b.type='button';b.className=t.className;b.textContent='〰 Egiluvchan qism';b.title='Egiluvchan qoplama detallari: kesiklar orasi, chiziq eni, teshik va naqsh';b.onclick=open;t.parentNode.insertBefore(b,t.nextSibling)}setInterval(add,900);
+})();</script>
+<script id=lm-fxatt>(function(){
+/* LaserMaket: tayyor egiluvchan tasmani maket korpusiga biriktirish — tishcha va tirqishlar, tayanch halqa */
+var K='lmFxAtt:',PI2=Math.PI*2;
+function DEF(){return{on:false,A:true,B:true,C:false,sp:60,w:8,cl:0.15,rw:6,off:{}}}
+function cfg(id){var c=DEF();try{var o=JSON.parse(localStorage.getItem(K+id)||'null');if(o)for(var k in o)c[k]=o[k]}catch(e){}c.off=c.off||{};return c}
+function save(id,c){try{localStorage.setItem(K+id,JSON.stringify(c))}catch(e){}}
+function HL(){return window.__lmHelpers}
+function X(p){return p.x!==undefined?p.x:p[0]}function Y(p){return p.y!==undefined?p.y:p[1]}
+function P(x,y){return{x:x,y:y}}
+function off(pl){var o=pl.offset||[0,0,0];return[+o[0]||0,+o[1]||0,+o[2]||0]}
+function bkey(pl){return pl.basis?JSON.stringify(pl.basis):''}
+function f1(v){return(Math.round(v*10)/10).toString()}
+function profR(pl,h){var a=pl.profile;for(var t=1;t<a.length;t++)if(h<=a[t][1]){var n=a[t-1][0],r=a[t-1][1],i=a[t][0],o=a[t][1];return n+(i-n)*(h-r)/((o-r)||1)}return a[a.length-1][0]}
+function area(r){var s=0;for(var i=0;i<r.length;i++){var a=r[i],b=r[(i+1)%r.length];s+=X(a)*Y(b)-X(b)*Y(a)}return s/2}
+function rarea(regs){var s=0;(regs||[]).forEach(function(g){s+=Math.abs(area(g.outer));(g.holes||[]).forEach(function(h){s-=Math.abs(area(h))})});return s}
+function pin(r,x,y){var c=false;for(var i=0,j=r.length-1;i<r.length;j=i++){var a=r[i],b=r[j];if((Y(a)>y)!==(Y(b)>y)&&x<(X(b)-X(a))*(y-Y(a))/(Y(b)-Y(a))+X(a))c=!c}return c}
+function pip(regs,x,y){return(regs||[]).some(function(g){return g.outer&&pin(g.outer,x,y)&&!(g.holes||[]).some(function(h){return pin(h,x,y)})})}
+function bb(regs){var a=1e9,b=1e9,c=-1e9,d=-1e9;(regs||[]).forEach(function(g){(g.outer||[]).forEach(function(p){var x=X(p),y=Y(p);if(x<a)a=x;if(y<b)b=y;if(x>c)c=x;if(y>d)d=y})});return{x0:a,y0:b,x1:c,y1:d}}
+function rect(x0,y0,x1,y1){return[P(x0,y0),P(x1,y0),P(x1,y1),P(x0,y1)]}
+function inside(regs0,pts,m){var qb=bb([{outer:pts}]),mg=m*1.5+.5,ov=function(r){return!(r.x1<qb.x0-mg||r.x0>qb.x1+mg||r.y1<qb.y0-mg||r.y0>qb.y1+mg)},regs=[];(regs0||[]).forEach(function(g){if(!ov(bb([g])))return;regs.push({outer:g.outer,holes:(g.holes||[]).filter(function(h){return ov(bb([{outer:h}]))})})});var cx=0,cy=0;pts.forEach(function(p){cx+=X(p);cy+=Y(p)});cx/=pts.length;cy/=pts.length;
+ var e=pts.map(function(p){var dx=X(p)-cx,dy=Y(p)-cy,L=Math.hypot(dx,dy)||1;return P(X(p)+dx/L*m*1.4142,Y(p)+dy/L*m*1.4142)});
+ var d=HL().de('difference',[{outer:e,holes:[]}],regs),bad=0;d.forEach(function(g){var a=rarea([g]),pr=0,o=g.outer;for(var i=0;i<o.length;i++){var p=o[i],q=o[(i+1)%o.length];pr+=Math.hypot(X(q)-X(p),Y(q)-Y(p))}if(a/(pr/2||1)>.8)bad+=a});return bad<.02}
+function dens(r,s){var o=[];for(var i=0;i<r.length;i++){var a=r[i],b=r[(i+1)%r.length],L=Math.hypot(X(b)-X(a),Y(b)-Y(a)),n=Math.max(1,Math.ceil(L/s));for(var k=0;k<n;k++)o.push(P(X(a)+(X(b)-X(a))*k/n,Y(a)+(Y(b)-Y(a))*k/n))}return o}
+/* nur bo'ylab plastina chetigacha masofa (eng uzoq kesishma) */
+function rp(regs,cx,cz,th){var ux=Math.cos(th),uy=Math.sin(th),best=null;(regs||[]).forEach(function(g){var r=g.outer||[];for(var i=0;i<r.length;i++){var a=r[i],b=r[(i+1)%r.length],ex=X(b)-X(a),ey=Y(b)-Y(a),dn=ux*ey-uy*ex;if(Math.abs(dn)<1e-12)continue;var ax=X(a)-cx,ay=Y(a)-cz,t=(ax*ey-ay*ex)/dn,s=(ax*uy-ay*ux)/dn;if(t>0&&s>=0&&s<=1&&(best===null||t>best))best=t}});return best}
+/* detal joylashuvi -> dunyo matritsasi (R satrlar bo'yicha, t) */
+function frame(p){var pl=p.placement;if(!pl)return null;var R,t;
+ if(pl.kind==='horizontal'){R=[[1,0,0],[0,0,-1],[0,1,0]];t=[0,+pl.y||0,0]}
+ else if(pl.kind==='free'){var a=pl.ex,b=pl.ey,c=pl.ez;if(!a||!b||!c)return null;R=[[a[0],b[0],c[0]],[a[1],b[1],c[1]],[a[2],b[2],c[2]]];t=(pl.pos||[0,0,0]).map(Number)}
+ else if(pl.kind==='band'||pl.kind==='lathe'){R=[[1,0,0],[0,1,0],[0,0,1]];t=[0,0,0]}else return null;
+ var bs=pl.basis;if(bs&&bs.ex){var Rb=[[bs.ex[0],bs.ey[0],bs.ez[0]],[bs.ex[1],bs.ey[1],bs.ez[1]],[bs.ex[2],bs.ey[2],bs.ez[2]]],pp=bs.pos||[0,0,0];R=mm(Rb,R);t=mv(Rb,t).map(function(v,i){return v+(+pp[i]||0)})}
+ var o=off(pl);t=[t[0]+o[0],t[1]+o[1],t[2]+o[2]];return{R:R,t:t}}
+function mm(A,B){var C=[[0,0,0],[0,0,0],[0,0,0]];for(var i=0;i<3;i++)for(var j=0;j<3;j++)for(var k=0;k<3;k++)C[i][j]+=A[i][k]*B[k][j];return C}
+function mv(A,v){return[0,1,2].map(function(i){return A[i][0]*v[0]+A[i][1]*v[1]+A[i][2]*v[2]})}
+function tr(A){return[[A[0][0],A[1][0],A[2][0]],[A[0][1],A[1][1],A[2][1]],[A[0][2],A[1][2],A[2][2]]]}
+function rel(Fb,Fp){var Rt=tr(Fb.R);return{R:mm(Rt,Fp.R),t:mv(Rt,[Fp.t[0]-Fb.t[0],Fp.t[1]-Fb.t[1],Fp.t[2]-Fb.t[2]])}}
+/* plastina tasma koordinatasida: (u,v) -> (X,Z), balandlik Yr */
+function pframe(B,Pp){var Fp=frame(Pp);if(!Fp||!B.F)return null;var T=rel(B.F,Fp);if(Math.abs(T.R[1][2])<.999)return null;
+ var a=T.R[0][0],b=T.R[0][1],c=T.R[2][0],d=T.R[2][1],tx=T.t[0],tz=T.t[2],det=a*d-b*c;if(Math.abs(det)<1e-6)return null;
+ var to=function(p){return P(a*X(p)+b*Y(p)+tx,c*X(p)+d*Y(p)+tz)},back=function(p){var x=X(p)-tx,z=Y(p)-tz;return P((d*x-b*z)/det,(-c*x+a*z)/det)};
+ var rg=Pp.regions.map(function(g){return{outer:g.outer.map(to),holes:(g.holes||[]).map(function(h){return h.map(to)})}});
+ return{P:Pp,Yr:T.t[1],tp:+Pp.thickness||3,to:to,back:back,rg:rg}}
+/* yoyilma (regions) va 3D tasma (flat) koordinatalari orasidagi moslik */
+var MC=new WeakMap();
+function mapP(M,x,y){if(M.t==='c')return P(M.sx*x+M.tx,M.sy*y+M.ty);var rho=M.r0+(y-M.y0)*M.dr,ph=M.p0+M.sp*x*M.kp;return P(M.cx+rho*Math.cos(ph),M.cy+rho*Math.sin(ph))}
+function mapPts(M,pts){return(M.t==='c'?pts:dens(pts,1.5)).map(function(p){return mapP(M,X(p),Y(p))})}
+function ovl(M,fl,rg,fb){var n=0,ok=0,W=fb.x1-fb.x0,H=fb.y1-fb.y0;for(var i=0;i<30;i++)for(var j=0;j<10;j++){var x=fb.x0+(i+.5)/30*W,y=fb.y0+(j+.5)/10*H;if(!pip(fl,x,y))continue;n++;var q=mapP(M,x,y);if(pip(rg,X(q),Y(q)))ok++}return n?ok/n:0}
+function cfit(pts){var n=pts.length,sx=0,sy=0;pts.forEach(function(p){sx+=X(p);sy+=Y(p)});var mx=sx/n,my=sy/n,suu=0,svv=0,suv=0,suuu=0,svvv=0,suvv=0,svuu=0;pts.forEach(function(p){var u=X(p)-mx,v=Y(p)-my;suu+=u*u;svv+=v*v;suv+=u*v;suuu+=u*u*u;svvv+=v*v*v;suvv+=u*v*v;svuu+=v*u*u});var a=suu,b=suv,c=suv,d=svv,e=(suuu+suvv)/2,f=(svvv+svuu)/2,dt=a*d-b*c;if(Math.abs(dt)<1e-9)return null;return[mx+(e*d-b*f)/dt,my+(a*f-c*e)/dt]}
+function fitMap(B){if(MC.has(B.p))return MC.get(B.p);var fl=B.pl.flat,rg=B.p.regions,fb=B.fb,rb=bb(rg),best=null,bs=-1,cands=[];
+ if(!B.cone){[1,-1].forEach(function(sy){[1,-1].forEach(function(sx){var fx0=sx>0?fb.x0:-fb.x1,fx1=sx>0?fb.x1:-fb.x0,fy0=sy>0?fb.y0:-fb.y1,fy1=sy>0?fb.y1:-fb.y0;
+   [rb.x0-fx0,rb.x1-fx1].forEach(function(tx){[rb.y0-fy0,rb.y1-fy1].forEach(function(ty){cands.push({t:'c',sx:sx,sy:sy,tx:tx,ty:ty})})})})})}
+ else{var Rb0=B.R(B.h0),Rt0=B.R(B.h1),L=fb.y1-fb.y0,rB=Math.max(Rb0,Rt0)*L/Math.abs(Rb0-Rt0),rS=rB-L,big=rg.slice().sort(function(u,v){return rarea([v])-rarea([u])})[0],pts=big.outer,cs=[],c=null;
+  for(var i0=0;i0<pts.length;i0++){var p1=pts[i0],p2=pts[(i0+1)%pts.length],p3=pts[(i0+2)%pts.length],ax=X(p1),ay=Y(p1),bx=X(p2),by=Y(p2),qx=X(p3),qy=Y(p3),dd=2*(ax*(by-qy)+bx*(qy-ay)+qx*(ay-by));if(Math.abs(dd)<1e-9||Math.hypot(bx-ax,by-ay)<.3||Math.hypot(qx-bx,qy-by)<.3)continue;
+   var ux0=((ax*ax+ay*ay)*(by-qy)+(bx*bx+by*by)*(qy-ay)+(qx*qx+qy*qy)*(ay-by))/dd,uy0=((ax*ax+ay*ay)*(qx-bx)+(bx*bx+by*by)*(ax-qx)+(qx*qx+qy*qy)*(bx-ax))/dd,rr=Math.hypot(ax-ux0,ay-uy0);if(Math.abs(rr-rB)<.1*rB||rS>3&&Math.abs(rr-rS)<.1*rS)cs.push([ux0,uy0])}
+  if(cs.length>=3){var md=function(a){a=a.slice().sort(function(x,y){return x-y});return a[a.length>>1]};c=[md(cs.map(function(q){return q[0]})),md(cs.map(function(q){return q[1]}))]}
+  if(c){
+   var ds2=pts.map(function(p){return Math.hypot(X(p)-c[0],Y(p)-c[1])}),r2=md(ds2.filter(function(d){return Math.abs(d-rB)<.1*rB})),r1=rS>3?md(ds2.filter(function(d){return Math.abs(d-rS)<.1*rS})):0,r1=r1>0?r1:r2-L,an=pts.map(function(p){return Math.atan2(Y(p)-c[1],X(p)-c[0])}).sort(function(a,b){return a-b}),gap=0,ga=0;
+   for(var i=0;i<an.length;i++){var g=(i+1<an.length?an[i+1]:an[0]+PI2)-an[i];if(g>gap){gap=g;ga=i}}var pa=an[(ga+1)%an.length],pb=pa+PI2-gap,Rb=B.R(B.h0),Rt=B.R(B.h1),grow=Rt>Rb,
+   rho0=grow?r1:r2,dr=(grow?1:-1)*(r2-r1)/((fb.y1-fb.y0)||1),Phi=B.span*Rb/rho0,kp=Phi/B.pl.width;
+   [[pa,1],[pb,-1],[pb-Phi,1],[pa+Phi,-1]].forEach(function(q){cands.push({t:'k',cx:c[0],cy:c[1],r0:rho0,y0:fb.y0,dr:dr,p0:q[0]-q[1]*fb.x0*kp,sp:q[1],kp:kp})})}}
+ cands.forEach(function(M){var v=ovl(M,fl,rg,fb);if(v>bs+.005){bs=v;best=M}});if(bs<.9)best=null;MC.set(B.p,best);return best}
+function band(p){var pl=p.placement;if(!pl||pl.kind!=='band'||!pl.profile||!pl.flat||!pl.flat.length||!(pl.width>0)||!(pl.length>0)||!(pl.height>0)||!p.regions||!p.regions.length)return null;
+ var fb=bb(pl.flat),rb=bb(p.regions),k=pl.length/pl.height,lo=Math.min(pl.angle0,pl.angle1),hi=Math.max(pl.angle0,pl.angle1);if(hi-lo<1e-4)return null;
+ var B={p:p,pl:pl,F:frame(p),tb:+p.thickness||1,fb:fb,y0:fb.y0,y1:fb.y1,h0:fb.y0/k,h1:fb.y1/k,k:k,lo:lo,hi:hi,span:hi-lo,full:hi-lo>PI2-1e-3,
+  R:function(h){return profR(pl,h)},xOf:function(th){return(pl.angle1-th)/(pl.angle1-pl.angle0)*pl.width},sx:pl.width/(hi-lo)};
+ B.cone=Math.abs(B.R(B.h0)-B.R(B.h1))>.05;var ex=!B.cone&&(rb.y1-rb.y0)-(fb.y1-fb.y0)>.5;B.botT=fb.y0<-.5||ex;B.topT=fb.y1>pl.length+.5||ex;
+ B.M=fitMap(B);return B.M?B:null}
+function inA(B,th){var t=th;while(t<B.lo-1e-9)t+=PI2;while(t>B.hi+1e-9)t-=PI2;return t>=B.lo-1e-9&&t<=B.hi+1e-9}
+/* tasma boshqa qobiq (lathe/band) ustiga yopishtirilganmi — unda tayanch halqa qo'yilmaydi */
+function overlay(B,parts){var hm=(B.h0+B.h1)/2,Rin=B.R(hm)-B.tb/2,am=B.lo+B.span/2;return parts.some(function(q){if(q===B.p||!q.placement)return false;var pl=q.placement,r;
+ if(pl.kind!=='lathe'&&pl.kind!=='band')return false;var F=frame(q);if(!F)return false;var T=rel(B.F,F);if(Math.abs(T.R[1][1]-1)>1e-3||Math.hypot(T.t[0],T.t[2])>.5)return false;var h=hm-T.t[1];
+ if(pl.kind==='lathe'){if(!(pl.profile&&pl.profile.length))return false;var a=pl.profile,lo=Math.min(a[0][1],a[a.length-1][1]),hi=Math.max(a[0][1],a[a.length-1][1]);if(h<lo||h>hi)return false;r=profR({profile:a.slice().sort(function(x,y){return x[1]-y[1]})},h);
+  var a0=Math.min(pl.angle0,pl.angle1),a1=Math.max(pl.angle0,pl.angle1);if(a1-a0<PI2-1e-3){var ok=false;for(var k=0;k<9;k++){var t=B.lo+B.span*(k+.5)/9;if(inA({lo:a0,hi:a1},t))ok=true}if(!ok)return false}}
+ else{var Q=band(q);if(!Q||h<Q.h0||h>Q.h1)return false;var ok2=false;for(var k2=0;k2<9;k2++)if(inA(Q,B.lo+B.span*(k2+.5)/9))ok2=true;if(!ok2)return false;r=Q.R(h)+Q.tb/2}
+ return r>Rin-3&&r<Rin+.3})}
+function angs(B,c,h,half){var R0=B.R(h),m=Math.min(B.span/2,(c.w/2+6)/R0),u=B.span-2*m,o=[],i;
+ if(B.full){var n0=Math.max(3,Math.round(B.span*R0/c.sp));for(i=0;i<n0;i++)o.push(B.lo+(i+(half?1:.5))*B.span/n0);return o}
+ if(u<=1e-6)return[B.lo+B.span/2];var n=Math.max(2,Math.ceil(u*R0/c.sp)+1);if(half){n=Math.max(3,n);for(i=0;i<n-1;i++)o.push(B.lo+m+(i+.5)*u/(n-1));return o}
+ for(i=0;i<n;i++)o.push(B.lo+m+i*u/(n-1));return o}
+function plates(model){return model.parts.filter(function(p){var k=p.placement&&p.placement.kind;return(k==='horizontal'||k==='free')&&p.regions&&p.regions.length})}
+function mk(a,b){for(var k in b)a[k]=b[k];return a}
+function detect(model,c){var BS=model.parts.map(band).filter(Boolean),PS=plates(model),J=[];
+ BS.forEach(function(B){var tolA=Math.max(1.2,.5*B.tb),cov={bot:B.botT,top:B.topT};
+  PS.forEach(function(Pp){var F=pframe(B,Pp);if(!F)return;var Yr=F.Yr,tp=F.tp,N=24,ok,k,th,r;
+   if(Yr>=B.h0+tp/2-.6&&Yr<=B.h1-tp/2+.6){var Rin=B.R(Yr)-B.tb/2;ok=0;for(k=0;k<N;k++){th=B.lo+(k+.5)/N*B.span;r=rp(F.rg,0,0,th);if(r!==null&&r>Rin-tolA&&r<Rin+.35)ok++}
+    if(ok>=N*.5){J.push(mk(F,{type:'A',B:B,key:B.p.id+'>'+Pp.id,tol:tolA}));if(Yr-tp/2-B.h0<12)cov.bot=true;if(B.h1-Yr-tp/2<12)cov.top=true}}
+   [['bot',Yr+tp/2-B.h0,B.h0],['top',B.h1-(Yr-tp/2),B.h1]].forEach(function(E){if(Math.abs(E[1])>1||(E[0]==='bot'?B.botT:B.topT))return;var h=E[2],Rm=B.R(h);ok=0;
+    for(k=0;k<N;k++){th=B.lo+(k+.5)/N*B.span;r=rp(F.rg,0,0,th);if(r!==null&&r>=Rm+B.tb/2+1.5&&pip(F.rg,Rm*Math.cos(th),Rm*Math.sin(th)))ok++}
+    if(ok>=N*.5){J.push(mk(mk({},F),{type:'B',B:B,end:E[0],h:h,key:B.p.id+'^'+E[0]+'>'+Pp.id}));cov[E[0]]=true}})});
+  if(c.C&&!overlay(B,model.parts))['bot','top'].forEach(function(e){if(!cov[e])J.push({type:'C',B:B,end:e,key:B.p.id+'^ring'+e})})});
+ return J}
+function mode(a,d){var m={},best=d,bn=0;a.forEach(function(v){m[v]=(m[v]||0)+1;if(m[v]>bn){bn=m[v];best=v}});return best}
+function ring(B,e,tr,c){var Yr=e==='bot'?B.h0+tr/2+1.5:B.h1-tr/2-1.5,ro=B.R(Yr)-B.tb/2-.05,ri=Math.max(2,ro-c.rw),H=HL(),regs;
+ if(B.full)regs=H.de('difference',[{outer:H.U(0,0,ro),holes:[]}],[{outer:H.U(0,0,ri),holes:[]}]);
+ else{var n=Math.max(8,Math.ceil(B.span*ro/2)),o=[],i;for(i=0;i<=n;i++){var a=B.lo+B.span*i/n;o.push(P(ro*Math.cos(a),ro*Math.sin(a)))}for(i=n;i>=0;i--){var a2=B.lo+B.span*i/n;o.push(P(ri*Math.cos(a2),ri*Math.sin(a2)))}regs=H.de('union',[{outer:o,holes:[]}],[])}
+ var pl={kind:'horizontal',y:Yr};if(B.pl.offset)pl.offset=B.pl.offset.slice();if(B.pl.basis)pl.basis=B.pl.basis;
+ return{id:B.p.id+(e==='bot'?'-TH1':'-TH2'),name:'Tayanch halqa — '+(B.p.name||B.p.id)+(e==='bot'?' (pastki)':' (yuqori)'),group:'Biriktirish',regions:regs,cutLines:[],engraveLines:[],placement:pl,explode:[0,e==='bot'?-6:6,0],stage:B.p.stage||0,order:(B.p.order||0)+.5,look:'sand',material:'plywood',thickness:tr,
+  info:[{label:'Vazifasi',value:'egiluvchan tasma uchiga ichkaridan tayanch, tishchalari tasmadagi tirqishlarga kiradi'},{label:'O‘lcham',value:'R '+f1(ri)+'…'+f1(ro)+' mm'+(B.full?'':', '+f1(B.span*180/Math.PI)+'°')}]}}
+function hull(ps){var p=ps.map(function(q){return[X(q),Y(q)]}).sort(function(a,b){return a[0]-b[0]||a[1]-b[1]}),cr=function(o,a,b){return(a[0]-o[0])*(b[1]-o[1])-(a[1]-o[1])*(b[0]-o[0])},lo=[],up=[],i;
+ for(i=0;i<p.length;i++){while(lo.length>=2&&cr(lo[lo.length-2],lo[lo.length-1],p[i])<=0)lo.pop();lo.push(p[i])}for(i=p.length-1;i>=0;i--){while(up.length>=2&&cr(up[up.length-2],up[up.length-1],p[i])<=0)up.pop();up.push(p[i])}up.pop();lo.pop();return lo.concat(up)}
+/* kesmaning qavariq ko'pburchakdan tashqaridagi qismlari */
+function segOut(a,b,H){var dx=b[0]-a[0],dy=b[1]-a[1],ti=0,to=1;for(var i=0;i<H.length;i++){var p=H[i],q=H[(i+1)%H.length],nx=q[1]-p[1],ny=-(q[0]-p[0]),num=nx*(p[0]-a[0])+ny*(p[1]-a[1]),den=nx*dx+ny*dy;
+  if(Math.abs(den)<1e-12){if(num<0)return[[a,b]];continue}var t=num/den;if(den>0){if(t<to)to=t}else{if(t>ti)ti=t}if(ti>to)return[[a,b]]}
+ var o=[],P1=function(t){return[a[0]+dx*t,a[1]+dy*t]};if(ti>1e-9)o.push([a,P1(ti)]);if(to<1-1e-9)o.push([P1(to),b]);return o}
+function trimLines(lines,Hs){var out=[];(lines||[]).forEach(function(l){var segs=[];for(var i=0;i+1<l.length;i++)segs.push([[X(l[i]),Y(l[i])],[X(l[i+1]),Y(l[i+1])]]);
+  Hs.forEach(function(H){var n=[];segs.forEach(function(s){n=n.concat(segOut(s[0],s[1],H))});segs=n});
+  var cur=null;segs.forEach(function(s){if(Math.hypot(s[1][0]-s[0][0],s[1][1]-s[0][1])<.05)return;if(cur&&Math.hypot(cur[cur.length-1].x-s[0][0],cur[cur.length-1].y-s[0][1])<1e-6)cur.push(P(s[1][0],s[1][1]));else{cur=[P(s[0][0],s[0][1]),P(s[1][0],s[1][1])];out.push(cur)}})});return out}
+/* asosiy: modelga tishcha va tirqishlarni qo'shish */
+function applyWith(model,c){if(!model||!model.parts||!HL()||!HL().de)return{model:model,J:[],rep:[]};
+ var parts=model.parts.slice(),J0=detect({parts:parts},c),tr=mode(plates({parts:parts}).filter(function(p){return p.placement.kind==='horizontal'}).map(function(p){return+p.thickness||3}),3),rings=[];
+ J0.forEach(function(j){if(j.type==='C'&&!c.off[j.key]&&j.B.h1-j.B.h0>=2*tr+8){var r=ring(j.B,j.end,tr,c);rings.push(r);parts.push(r)}});
+ var J=detect({parts:parts},mk(mk({},c),{C:false})).filter(function(j){return!c.off[j.key]&&(j.type==='A'&&c.A||j.type==='B'&&c.B||rings.indexOf(j.P)>=0)}),
+  ed={},rep=[];
+ function E(p,Bm){var e=ed[p.id]||(ed[p.id]={p:p,add:[],sub:[],info:[]});if(Bm)e.M=Bm.M;return e}
+ J.forEach(function(j){var B=j.B,Pp=j.P,n=0,list=angs(B,c,j.type==='A'?j.Yr:j.h,j.type==='B');
+  var R0=B.R(j.type==='A'?j.Yr:j.h),stp=2/R0,lim=Math.min(c.sp*.3,20)/R0;
+  list.forEach(function(t0){for(var q=0;q*stp<=lim;q++){var ok1=one(t0+q*stp);if(ok1)return;if(q&&one(t0-q*stp))return}});
+  function one(th){if(!inA(B,th))return false;var ux=Math.cos(th),uy=Math.sin(th),vx=-uy,vy=ux,w2=c.w/2,x=B.xOf(th);
+   if(j.type==='A'){var r=rp(j.rg,0,0,th),Rm=B.R(j.Yr),Rin=Rm-B.tb/2;if(r===null||r<Rin-j.tol||r>Rin+.35)return false;
+    var ro=Rm+B.tb/2,ri=r-2,tab=[P(ux*ri-vx*w2,uy*ri-vy*w2),P(ux*ro-vx*w2,uy*ro-vy*w2),P(ux*ro+vx*w2,uy*ro+vy*w2),P(ux*ri+vx*w2,uy*ri+vy*w2)].map(j.back);
+    var dx=(c.w+c.cl)/2/Rm*B.sx,yc=j.Yr*B.k,dy=(j.tp+c.cl)/2*B.k,ya=yc-dy,yb=yc+dy,nb=ya<B.y0+1.2,nt=yb>B.y1-1.2;if(nb)ya=B.y0-1;if(nt)yb=B.y1+1;
+    var sl=rect(x-dx,ya,x+dx,yb),ck=rect(x-dx-1,nb?B.y0+.3:ya-1,x+dx+1,nt?B.y1-.3:yb+1);
+    if(!inside(B.p.regions,mapPts(B.M,ck),0))return false;E(Pp).add.push(tab);E(B.p,B).sub.push(sl);n++;return true}
+   else{var h=j.h,Rm2=B.R(h),hx=w2/Rm2*B.sx,ye=h*B.k,tl=j.tp*B.k,bot=j.end==='bot';
+    var chk=bot?rect(x-hx,ye+.5,x+hx,ye+2.5):rect(x-hx,ye-2.5,x+hx,ye-.5);if(!inside(B.p.regions,mapPts(B.M,chk),0))return false;var pq=mapP(B.M,x,bot?ye-.4:ye+.4);if(pip(B.p.regions,X(pq),Y(pq)))return false;
+    var tb2=bot?rect(x-hx,ye-tl,x+hx,ye+1):rect(x-hx,ye-1,x+hx,ye+tl);
+    var a=(c.w+c.cl)/2,b=(B.tb+c.cl)/2,qx=ux*Rm2,qy=uy*Rm2,ps=[P(qx-vx*a-ux*b,qy-vy*a-uy*b),P(qx+vx*a-ux*b,qy+vy*a-uy*b),P(qx+vx*a+ux*b,qy+vy*a+uy*b),P(qx-vx*a+ux*b,qy-vy*a+uy*b)];
+    if(!inside(j.rg,ps,1))return false;E(B.p,B).add.push(tb2);E(Pp).sub.push(ps.map(j.back));n++;return true}}
+  var lbl=j.type==='A'?'«'+(Pp.name||Pp.id)+'» tishchasi → tasmadagi tirqish':'tasma '+(j.end==='bot'?'pastki':'yuqori')+' tishchasi → «'+(Pp.name||Pp.id)+'» dagi tirqish';
+  rep.push({key:j.key,type:rings.indexOf(Pp)>=0?'C':j.type,band:B.p,plate:Pp,n:n,label:lbl,j:j});
+  if(n){E(B.p).info.push({label:'Korpusga biriktirish',value:n+' ta '+(j.type==='A'?'tirqish ← '+Pp.id:'tishcha → '+Pp.id)});E(Pp).info.push({label:'Egiluvchan tasmaga',value:n+' ta '+(j.type==='A'?'tishcha → '+B.p.id:'tirqish ← '+B.p.id)})}});
+ var dead=rings.filter(function(r){return!rep.some(function(x){return x.plate===r&&x.n>0})});if(dead.length){parts=parts.filter(function(p){return dead.indexOf(p)<0});rep=rep.filter(function(x){return dead.indexOf(x.plate)<0});rings=rings.filter(function(r){return dead.indexOf(r)<0})}
+ var H=HL();
+ parts=parts.map(function(p){var e=ed[p.id];if(!e||(!e.add.length&&!e.sub.length))return p;var q={};for(var k in p)q[k]=p[k];
+  var go=function(regs,M){var f=function(o){return{outer:M?mapPts(M,o):o,holes:[]}},r=regs;if(e.add.length)r=H.de('union',r,e.add.map(f));if(e.sub.length)r=H.de('difference',r,e.sub.map(f));return r};
+  q.regions=go(p.regions,e.M);if(p.placement&&p.placement.kind==='band'){var pl={};for(var k2 in p.placement)pl[k2]=p.placement[k2];pl.flat=go(p.placement.flat).map(function(g){return{outer:dens(g.outer,2),holes:(g.holes||[]).map(function(h){return dens(h,2)})}});q.placement=pl}
+  if(e.M&&(e.sub.length||e.add.length)&&p.cutLines&&p.cutLines.length){var g2=Math.max(2,1.2*(+p.thickness||1)),k2=p.placement.length/p.placement.height,Hs=e.sub.concat(e.add).map(function(o){var b2=bb([{outer:o}]);return hull(mapPts(e.M,rect(b2.x0-g2,b2.y0-g2*k2,b2.x1+g2,b2.y1+g2*k2)))});q.cutLines=trimLines(p.cutLines,Hs)}
+  q.info=(p.info||[]).concat(e.info);return q});
+ var o={};for(var k in model)o[k]=model[k];o.parts=parts;
+ if(rep.length){var nt=rep.reduce(function(s,r){return s+r.n},0);
+  o.checks=(model.checks||[]).concat([{label:'Korpusga biriktirish',ok:nt>0,detail:nt+' ta tishcha-tirqish juftligi'+(rings.length?', '+rings.length+' ta tayanch halqa':'')+' (tishcha eni '+c.w+' mm, zazor '+c.cl+' mm)'}]);
+  o.summary=(model.summary||[]).concat([{label:'Egiluvchan qism biriktirilishi',value:nt+' ta tishcha'}]);
+  var st=rep[0].band.stage||0;o.steps=(model.steps||[]).concat([{stage:st,title:'Egiluvchan tasmani korpusga biriktirish',text:'Avval disk va halqalarni o‘rnating. Tasmani bir chetidan boshlab egib, disklardagi tishchalarni tasmadagi tirqishlarga ketma-ket kiritib boring; tasmaning pastki/yuqori tishchalari asos va qopqoqdagi tirqishlarga tushadi. Tishchalar tasma sirtiga tekis chiqadi — kerak bo‘lsa yelim surting va jilvirlang.'+(rings.length?' Tayanch halqalar tasma uchlarini ichkaridan ushlab turadi.':'')}])}
+ return{model:o,J:J,rep:rep,rings:rings}}
+function apply(id,model){var c=cfg(id);if(!c.on)return model;try{return applyWith(model,c).model}catch(e){console.warn('lm-fxatt',e);return model}}
+window.__lmFxAtt={apply:apply,applyWith:applyWith,detect:detect,cfg:cfg,save:save,open:function(){open()}};
+
+/* ================= OYNA ================= */
+function st(){return window.__lmStore&&window.__lmStore.getState()}
+function gen(){var s=st();return s&&(window.__lmGens||[]).find(function(g){return g.id===s.generatorId})}
+function bump(){var s=window.__lmStore,S=st();if(!s||!S)return;var id=S.generatorId,pb=S.paramsById||{},cur=pb[id]||{},np={};for(var k in cur)np[k]=cur[k];np.__fx=Date.now();var npb={};for(var k2 in pb)npb[k2]=pb[k2];npb[id]=np;if(s.setState)s.setState({paramsById:npb})}
+var css=document.createElement('style');css.textContent='#lmAt{position:fixed;inset:0;z-index:10000;background:#0008;display:none;align-items:center;justify-content:center;padding:12px}#lmAt .bx{background:#fffdf8;color:#1d1b17;width:min(1000px,100%);max-height:94vh;overflow:auto;border-radius:14px;padding:16px;font:13px/1.45 system-ui,sans-serif}#lmAt h3{margin:0 0 4px;font-size:16px}#lmAt .mu{color:#6d665a;font-size:12px}#lmAt .row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin:8px 0}#lmAt input[type=number]{font:inherit;padding:4px 6px;border:1px solid #d8cfbe;border-radius:7px;background:#fff;color:#1d1b17;width:64px}#lmAt button{font:inherit;border:1px solid #d8cfbe;background:#fff;color:#1d1b17;border-radius:8px;padding:7px 12px;cursor:pointer}#lmAt .pri{background:#e2a812;border-color:#e2a812;font-weight:700}#lmAt label{white-space:nowrap}#lmAt .mt{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:8px;margin:8px 0}#lmAt .mt label{white-space:normal;display:flex;gap:8px;align-items:flex-start;border:1px solid #e3dccd;border-radius:10px;padding:8px;background:#fff;cursor:pointer}#lmAt .mt svg{flex:none}#lmAtL{max-height:240px;overflow:auto;border:1px solid #e3dccd;border-radius:8px;background:#fff}#lmAtL table{border-collapse:collapse;width:100%;font-size:12px}#lmAtL td,#lmAtL th{padding:4px 6px;border-bottom:1px solid #f0eadf;text-align:left}#lmAtL tr.cur{background:#fbf1d4}#lmAtL tr{cursor:pointer}#lmAtCv{width:100%;height:300px;border:1px solid #e3dccd;border-radius:8px;background:#fff;margin-top:8px}#lmAt .ok{color:#2d7a35;font-weight:600}#lmAt .bad{color:#b3261e;font-weight:600}@media (max-width:600px){#lmAtCv{height:420px}}';document.head.appendChild(css);
+var IA='<svg width=58 height=44 viewBox="0 0 58 44"><ellipse cx=29 cy=22 rx=26 ry=10 fill=none stroke=#c58a1b stroke-width=3 /><ellipse cx=29 cy=22 rx=22 ry=7.5 fill=#e9d3a6 stroke=#7a5a2a /><rect x=47 y=19 width=8 height=5 fill=#7a5a2a /><rect x=3 y=19 width=8 height=5 fill=#7a5a2a /></svg>',
+ IB='<svg width=58 height=44 viewBox="0 0 58 44"><rect x=4 y=30 width=50 height=8 rx=1 fill=#e9d3a6 stroke=#7a5a2a /><rect x=12 y=6 width=34 height=24 fill=none stroke=#c58a1b stroke-width=3 /><rect x=17 y=29 width=6 height=7 fill=#c58a1b /><rect x=35 y=29 width=6 height=7 fill=#c58a1b /></svg>',
+ IC='<svg width=58 height=44 viewBox="0 0 58 44"><rect x=12 y=4 width=34 height=34 fill=none stroke=#c58a1b stroke-width=3 /><rect x=14 y=32 width=30 height=4 fill=#e9d3a6 stroke=#7a5a2a /><rect x=14 y=6 width=30 height=4 fill=#e9d3a6 stroke=#7a5a2a /></svg>';
+var m=document.createElement('div');m.id='lmAt';m.innerHTML='<div class=bx><h3>🔗 Egiluvchan qismni korpusga biriktirish</h3><p class=mu style=margin:0>Egiluvchan tasmalar va ularga tegib turgan korpus detallari (disk, halqa, asos, qopqoq) avtomatik topiladi. Tanlangan usul bo‘yicha tishcha va tirqishlar ikkala detalga birga chiziladi — tasma joyiga mahkam o‘tiradi, siljimaydi va yumaloqligini saqlaydi. 3D ko‘rinishda, eksportda va G-code da ham shunday bo‘ladi.</p>'+
+'<div class=row><label><input type=checkbox id=lmAtOn> <b>Biriktirishni yoqish</b></label><span class=mu id=lmAtG></span></div>'+
+'<div class=mt><label><input type=checkbox id=lmAtA>'+IA+'<span><b>Disk tishchasi → tasma tirqishi</b><br><span class=mu>Tasma ichidagi disk va halqalar chetiga tishcha, tasmaga tirqish. Tishcha tasma sirtiga tekis chiqadi.</span></span></label>'+
+'<label><input type=checkbox id=lmAtB>'+IB+'<span><b>Tasma tishchasi → asos tirqishi</b><br><span class=mu>Tasma asos yoki qopqoq ustida tursa, pastki/yuqori chetiga tishcha, plastinaga tirqish.</span></span></label>'+
+'<label><input type=checkbox id=lmAtC>'+IC+'<span><b>Tayanch halqa qo‘shish</b><br><span class=mu>Uchida hech narsa bo‘lmagan tasmaga ichkaridan halqa qo‘shiladi va tishcha bilan ulanadi.</span></span></label></div>'+
+'<div class=row><label>Tishcha eni <input type=number id=lmAtW min=3 max=40 step=0.5> mm</label><label>Tishchalar oralig‘i <input type=number id=lmAtS min=15 max=300 step=5> mm</label><label>Zazor <input type=number id=lmAtZ min=0 max=0.6 step=0.05> mm</label><label>Halqa eni <input type=number id=lmAtR min=3 max=30 step=0.5> mm</label></div>'+
+'<div id=lmAtL></div><canvas id=lmAtCv></canvas><div class=mu id=lmAtI style=margin-top:4px></div>'+
+'<div class=row><button class=pri id=lmAtGo>Qo‘llash</button><button id=lmAtOff>Biriktirishni o‘chirish</button><span class=mu id=lmAtS2></span><span style=flex:1></span><button id=lmAtX>Yopish</button></div></div>';
+document.body.appendChild(m);
+function $(s){return m.querySelector(s)}
+var G=null,C=null,RAW=null,RES=null,cur=0;
+function readUI(){C.on=$('#lmAtOn').checked;C.A=$('#lmAtA').checked;C.B=$('#lmAtB').checked;C.C=$('#lmAtC').checked;C.w=Math.max(3,+$('#lmAtW').value||8);C.sp=Math.max(15,+$('#lmAtS').value||60);C.cl=Math.max(0,+$('#lmAtZ').value||0);C.rw=Math.max(3,+$('#lmAtR').value||6)}
+function writeUI(){$('#lmAtOn').checked=!!C.on;$('#lmAtA').checked=!!C.A;$('#lmAtB').checked=!!C.B;$('#lmAtC').checked=!!C.C;$('#lmAtW').value=C.w;$('#lmAtS').value=C.sp;$('#lmAtZ').value=C.cl;$('#lmAtR').value=C.rw}
+function esc(s){return String(s==null?'':s).replace(/[<&"]/g,function(c){return{'<':'&lt;','&':'&amp;','"':'&quot;'}[c]})}
+function calc(){var c={};for(var k in C)c[k]=C[k];c.off={};RES=RAW?applyWith(RAW,c):null;
+ var all=RES?RES.rep:[];var h='<table><tr><th></th><th>Egiluvchan detal</th><th>Korpus detali</th><th>Usul</th><th>Tishcha</th></tr>';
+ if(!all.length)h+='<tr><td colspan=5 class=mu style="padding:10px">'+(RAW&&RAW.parts.some(band)?'Tasmaga tegib turgan disk yoki asos topilmadi. «Tayanch halqa qo‘shish» ni yoqing — halqa qo‘shilib, tasma unga ulanadi.':'Bu maketda egiluvchan tasma (band) topilmadi.')+'</td></tr>';
+ all.forEach(function(r,i){var on=!C.off[r.key];h+='<tr data-i='+i+(i===cur?' class=cur':'')+'><td><input type=checkbox data-k="'+esc(r.key)+'"'+(on?' checked':'')+'></td><td>'+esc(r.band.id)+' — '+esc(r.band.name)+'</td><td>'+esc(r.plate.id)+' — '+esc(r.plate.name)+'</td><td>'+({A:'disk tishchasi → tasma',B:'tasma tishchasi → plastina',C:'tayanch halqa'})[r.type]+'</td><td class='+(r.n?'ok':'bad')+'>'+(r.n||'joy yo‘q')+'</td></tr>'});
+ $('#lmAtL').innerHTML=h+'</table>';
+ [].forEach.call($('#lmAtL').querySelectorAll('tr[data-i]'),function(tr){tr.onclick=function(ev){if(ev.target.tagName==='INPUT')return;cur=+tr.dataset.i;calc()}});
+ [].forEach.call($('#lmAtL').querySelectorAll('input[data-k]'),function(b){b.onchange=function(){if(b.checked)delete C.off[b.dataset.k];else C.off[b.dataset.k]=1}});
+ var BS=RAW?RAW.parts.map(band).filter(Boolean):[];$('#lmAtG').textContent=(G?G.name||G.id:'')+' · egiluvchan tasmalar: '+BS.length+' · ulanishlar: '+all.length;
+ draw()}
+function draw(){var cv=$('#lmAtCv'),W=cv.clientWidth||900,Hh=cv.clientHeight||300,dp=window.devicePixelRatio||1;cv.width=W*dp;cv.height=Hh*dp;var g=cv.getContext('2d');g.setTransform(dp,0,0,dp,0,0);g.clearRect(0,0,W,Hh);
+ var r=RES&&RES.rep[cur];if(!r){$('#lmAtI').textContent='';return}
+ var mp={};RES.model.parts.forEach(function(p){mp[p.id]=p});var bp=mp[r.band.id],pp=mp[r.plate.id],B=band(r.band);
+ var narrow=W<600,w1=narrow?W:W*.38,h1=narrow?Hh*.45:Hh,x2=narrow?0:w1,y2=narrow?h1:0,w2=narrow?W:W-w1,h2=narrow?Hh-h1:Hh;
+ function fit(regs,x,y,w,h,flip){var b=bb(regs),s=Math.min((w-24)/(b.x1-b.x0||1),(h-30)/(b.y1-b.y0||1));return function(p){return[x+12+(X(p)-b.x0)*s+((w-24)-(b.x1-b.x0)*s)/2,flip?y+18+(b.y1-Y(p))*s+((h-30)-(b.y1-b.y0)*s)/2:y+18+(Y(p)-b.y0)*s+((h-30)-(b.y1-b.y0)*s)/2]}}
+ function path(regs,T,fill,stroke){g.beginPath();regs.forEach(function(rg){[rg.outer].concat(rg.holes||[]).forEach(function(rr){rr.forEach(function(p,i){var q=T(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.closePath()})});g.fillStyle=fill;g.fill('evenodd');g.strokeStyle=stroke;g.lineWidth=1;g.stroke()}
+ g.font='12px system-ui';g.fillStyle='#6d665a';g.fillText('Korpus detali: '+r.plate.id+' (ustdan)',x2?8:8,13);
+ var F=B?pframe(B,pp):null,prg=F?F.rg:pp.regions,T1=fit(prg,0,0,w1,h1,false);path(prg,T1,'#efdcb4','#7a5a2a');
+ if(F){var hh=r.j.type==='B'?r.j.h:F.Yr,R=B.R(hh);g.beginPath();for(var i=0;i<=64;i++){var a=B.lo+B.span*i/64,q=T1(P(R*Math.cos(a),R*Math.sin(a)));i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])}g.strokeStyle='#c58a1b';g.lineWidth=3;g.stroke()}
+ g.fillStyle='#6d665a';g.fillText('Egiluvchan tasma: '+r.band.id+' (yoyilma)',x2+8,y2+13);
+ var T2=fit(bp.regions,x2,y2,w2,h2,true);path(bp.regions,T2,'#f6e7c4','#7a5a2a');
+ g.strokeStyle='#b3261e';g.lineWidth=.6;(bp.cutLines||[]).forEach(function(l){g.beginPath();l.forEach(function(p,i){var q=T2(p);i?g.lineTo(q[0],q[1]):g.moveTo(q[0],q[1])});g.stroke()});
+ $('#lmAtI').textContent=r.label+': '+r.n+' ta. Tishcha eni '+C.w+' mm, tirqish '+f1(C.w+C.cl)+' mm × (qalinlik + '+C.cl+' mm).'+(r.n?'':' Bu joyda tishcha sig‘madi — tishcha enini yoki oraliqni o‘zgartiring.')}
+function open(){G=gen();if(!G){alert('Avval maketni tanlang');return}C=cfg(G.id);var S=st();RAW=null;cur=0;
+ try{RAW=(G.__fxOrig||G.generate).call(G,S.paramsById[S.generatorId]);var fx=window.__lmFlexApi;if(fx&&fx.applyFlex0)RAW=fx.applyFlex0(G.id,RAW)}catch(e){console.warn(e)}
+ writeUI();$('#lmAtS2').textContent='';m.style.display='flex';setTimeout(calc,20)}
+['#lmAtA','#lmAtB','#lmAtC','#lmAtW','#lmAtS','#lmAtZ','#lmAtR'].forEach(function(s){$(s).addEventListener('change',function(){readUI();calc()})});
+$('#lmAtOn').onchange=function(){readUI()};
+$('#lmAtGo').onclick=function(){readUI();C.on=true;$('#lmAtOn').checked=true;save(G.id,C);bump();var n=RES?RES.rep.filter(function(r){return!C.off[r.key]}).reduce(function(s,r){return s+r.n},0):0;$('#lmAtS2').textContent='✓ Qo‘llandi: '+n+' ta tishcha-tirqish juftligi'};
+$('#lmAtOff').onclick=function(){C.on=false;$('#lmAtOn').checked=false;save(G.id,C);bump();$('#lmAtS2').textContent='Biriktirish o‘chirildi'};
+$('#lmAtX').onclick=function(){m.style.display='none'};m.addEventListener('click',function(e){if(e.target===m)m.style.display='none'});
+window.addEventListener('resize',function(){if(m.style.display==='flex')draw()});
+function add(){if(document.getElementById('lmAttBtn'))return;var t=document.getElementById('lmFlexBtn');if(!t)return;var b=document.createElement('button');b.id='lmAttBtn';b.type='button';b.className=t.className;b.textContent='🔗 Korpusga biriktirish';b.title='Egiluvchan tasmani disk, asos va qopqoqqa tishcha-tirqish bilan ulash';b.onclick=open;t.parentNode.insertBefore(b,t.nextSibling)}setInterval(add,900);
 })();</script><script id=lm-qpic>(function(){
 /* LaserMaket: tayyor maket detaliga fayldan rasm qo'yish (gravyura kontur / to'ldirib gravyura / kesib o'yish) */
 var K='lmQp:';
@@ -12237,10 +12441,10 @@ window.__lmImport=show;window.__lmImportFile=readFile;
 function add(){if(document.getElementById('lmImpBtn'))return;var t=document.getElementById('lmFlexBtn')||document.getElementById('lmSellBtn');if(!t)return;var b=document.createElement('button');b.id='lmImpBtn';b.type='button';b.className=t.className;b.textContent='📂 Fayldan import';b.title='DXF, SVG, PDF (CDR) faylni yuklab, saytda qayta ishlash';b.onclick=show;t.parentNode.insertBefore(b,t)}setInterval(add,900);
 
 })();</script><script id="lm-ux">(function(){if(window.__lmUX)return;window.__lmUX=1;
-var TOOLS=[['lmImpBtn','DXF, SVG, PDF (CDR) faylni yuklab, saytda qayta ishlash'],['lmPaperBtn','Qog‘oz maketga o‘tkazish (yelim qanotli yoyilmalar)'],['lmSkinBtn','Maket ustiga qog‘oz qoplama yoyilmasi'],['lmImgBtn','Rasm yoki fotodan yangi maket'],['lmQpBtn','Tayyor detal yuziga rasm gravyurasi'],['lmFlexBtn','Egiluvchan kesik (living hinge) sozlash'],['lmNestBtn','Detallarni listga zichroq joylash'],['p3','3D printer uchun STL'],['lmMarkBtn','Muallif belgisi va yozuvi'],['lmSellBtn','Sotuv narxi va kartochka']];
+var TOOLS=[['lmImpBtn','DXF, SVG, PDF (CDR) faylni yuklab, saytda qayta ishlash'],['lmPaperBtn','Qog‘oz maketga o‘tkazish (yelim qanotli yoyilmalar)'],['lmSkinBtn','Maket ustiga qog‘oz qoplama yoyilmasi'],['lmImgBtn','Rasm yoki fotodan yangi maket'],['lmQpBtn','Tayyor detal yuziga rasm gravyurasi'],['lmFlexBtn','Egiluvchan kesik (living hinge) sozlash'],['lmAttBtn','Egiluvchan tasmani korpusga tishcha-tirqish bilan ulash'],['lmNestBtn','Detallarni listga zichroq joylash'],['p3','3D printer uchun STL'],['lmMarkBtn','Muallif belgisi va yozuvi'],['lmSellBtn','Sotuv narxi va kartochka']];
 var PROJ=[['Loyihani saqlash','Joriy sozlamalarni faylga saqlash','Ctrl+S'],['Ochish','Saqlangan loyiha faylini ochish','Ctrl+O'],['Umumiy galereya','Boshqalar ulashgan maketlar',''],['Standart qiymatlar','Barcha parametrlarni boshlang‘ich holatga qaytarish','']];
 var css=`
-#lmImpBtn,#lmPaperBtn,#lmSkinBtn,#lmImgBtn,#lmQpBtn,#lmFlexBtn,#lmNestBtn,#lmMarkBtn,#lmSellBtn,#lmGalBtn,.top-actions>.p3-btn,.top-actions>.lmux-h{display:none!important}
+#lmImpBtn,#lmPaperBtn,#lmSkinBtn,#lmImgBtn,#lmQpBtn,#lmFlexBtn,#lmAttBtn,#lmNestBtn,#lmMarkBtn,#lmSellBtn,#lmGalBtn,.top-actions>.p3-btn,.top-actions>.lmux-h{display:none!important}
 .top-actions{align-items:center;flex-wrap:nowrap}
 .lmux-dd{position:relative}
 .lmux-btn{display:inline-flex;align-items:center;gap:6px;height:34px;padding:0 12px;border-radius:8px;border:1px solid #4a4d52;background:#2c2f33;color:#f1f2f3;font:600 13px/1 system-ui,sans-serif;cursor:pointer;white-space:nowrap}
