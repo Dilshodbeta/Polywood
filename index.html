@@ -3023,6 +3023,7 @@ function impG(e){let L=window.__lmImpList?window.__lmImpList():[],id=String(e.fi
  let CK=[{label:`Fayl`,ok:!0,detail:`${meta.name} — ${D.src||``}`},{label:`Detallar`,ok:y.length>0,detail:`${y.length} ta yopiq kontur${D.st&&D.st.loose?`, ${D.st.loose} ta tashqi chiziq olib tashlangan`:``}`},{label:`Qalinlik`,ok,detail:D.srcT?`fayldagi tirqishlar ${G(D.srcT,1)} mm (${D.slots} ta), tanlangan faner ${G(t,2)} mm`+(e.slotFit&&nfit?` — ${nfit} ta tirqish ${G(t+cl,2)} mm ga moslandi`:``):`tirqish aniqlanmadi`}];
  (D.warn||[]).forEach(w2=>CK.push({label:`Ogohlantirish`,ok:!1,detail:w2}));
  if(AS&&AS.ok&&AS.ev){let C=AS.ev.C,mt=C.T+C.L,mo=C.To+C.Lo;CK.push({label:`To‘liq kirish (ona–ota)`,ok:C.To===C.T&&C.So===C.S&&!AS.ev.coll,detail:`tishchalar: ${C.To}/${C.T} tirqish yoki o‘yiqqa to‘liq kirgan; tirqishlar: ${C.So}/${C.S} to‘lgan`+(C.G?`; barmoq o‘yiqlari: ${C.Go}/${C.G}`:``)+(C.L?`; kesishmalar: ${C.Lo}/${C.L}`:``)+(AS.ev.coll?`; ${AS.ev.coll} ta detal boshqasini kesib o‘tadi`:``)+` — moslik ${AS.ev.fit}%`+(AS.vars&&AS.vars.length>1?`, variant ${AS.vsel+1}/${AS.vars.length}`:``)})}
+ if(AS&&AS.ok&&AS.rules){let RU=AS.rules,sl=Object.entries(RU.slope||{}),pid=i=>y[i]?y[i].id:`?`;CK.push({label:`Yig‘ish qoidalari`,ok:!0,detail:[`asos — ${pid(AS.root)} (tirqishi ko‘p va eng katta detal, tishchalar unga tik kiradi)`,sl.length?`qiya tirqishlar: `+sl.map(([d,n])=>`${n} ta ${d}°`).join(`, `)+` — detallar shu burchakda kiritildi`:``,RU.closing&&RU.closing.length?`yopuvchi detallar (tirqishli, tishchasiz — oxirida qo‘yiladi): ${RU.closing.map(pid).join(`, `)}`:``,RU.sib?`${RU.sib} ta bir xil detal bir xil yo‘nalishda qo‘yildi`:``,`tishchalar qatori to‘liq kirishi talab qilinadi`].filter(Boolean).join(`; `)})}
  if(AS)CK.push({label:`3D yig‘ish`,ok:!!AS.ok,detail:AS.ok?`${AS.placed} / ${y.length} detal yig‘ildi, ${AS.joints} ta mos ulanish (`+Object.entries(AS.why||{}).map(([k,v])=>({tab:`tishcha–tirqish`,finger:`barmoq`,lap:`kesishma`})[k]+`: `+v).join(`, `)+`), material ${G(AS.tS,1)} mm`:`3D yig‘ib bo‘lmadi: ${AS.why||`mos ulanish topilmadi`} — detallar tekis ko‘rsatildi`});
  let AOK=AS&&AS.ok,EX=AOK?AS.ext:null;
  return{parts:y,steps:ST||[{stage:0,title:`Import qilingan detallar`,text:`Fayldagi barcha detallar tekis holda. Listlarga joylash, egiluvchan zona, rasm qo‘yish, G-code va eksport — saytning boshqa maketlaridagi kabi ishlaydi.`}],drawings:[],summary:[{label:`Fayl`,value:meta.name},...(AOK?[{label:`3D maket`,value:`${G(EX[0],0)} × ${G(EX[2],0)} × ${G(EX[1],0)} mm, ${AS.placed} detal yig‘ildi`}]:[]),{label:`Umumiy o‘lcham`,value:`${G(W,0)} × ${G(H,0)} mm`+(s!==1?` (masshtab ${G(s*100,0)}%)`:``)},{label:`Detallar`,value:`${y.length} ta`}],checks:CK,extent:AOK?{radius:Math.max(EX[0],EX[2])*.6+20,height:EX[1],topRadius:Math.max(EX[0],EX[2])*.5,steam:!1}:{radius:Math.max(W,H)*.55,height:Math.max(20,Math.min(W,H)*.15),topRadius:Math.max(W,H)*.5,steam:!1},glueJoints:0,stageNames:SN}}
@@ -11254,13 +11255,13 @@ function feats(p,s,tS,T){var O=simp(pts(p.o,s));if(area2(O)<0)O.reverse();var n=
  // guruhlar (bir chiziqdagi tishlar)
  var groups=[];teeth.forEach(function(t){var g=groups.find(function(G){return G.u[0]*t.u[0]+G.u[1]*t.u[1]>.9998&&Math.abs(G.cr-t.cr)<.25&&Math.abs(G.h-t.h)<.25});if(!g){g={u:t.u,n:t.n,cr:t.cr,h:t.h,ct:t.cr+t.h,T:[],G:[]};groups.push(g)}(t.k==='T'?g.T:g.G).push(t)});
  // tirqish chiziqlari
- var sl=(p.s||[]).map(function(q){var u=[q[3],q[4]];if(u[0]<-1e-9||(Math.abs(u[0])<1e-9&&u[1]<0))u=[-u[0],-u[1]];return{c:[q[1]*s,q[2]*s],u:u,L:q[5]*s,w:q[6]*s}}).filter(function(q){return Math.abs(q.w-tS)<.6});
- var lines=[];sl.forEach(function(q){var nn=[-q.u[1],q.u[0]],off=nn[0]*q.c[0]+nn[1]*q.c[1],sm=q.u[0]*q.c[0]+q.u[1]*q.c[1];var L=lines.find(function(l){return l.u[0]*q.u[0]+l.u[1]*q.u[1]>.9998&&Math.abs(l.off-off)<.25});if(!L){L={u:q.u,n:nn,off:off,S:[]};lines.push(L)}L.S.push({c:q.c,s:sm,L:q.L})});
+ var sl=(p.s||[]).map(function(q){var u=[q[3],q[4]];if(u[0]<-1e-9||(Math.abs(u[0])<1e-9&&u[1]<0))u=[-u[0],-u[1]];var w=q[6]*s,rr=w/tS,al=rr>1.06?2*(Math.atan(rr)-Math.PI/4):0;return{c:[q[1]*s,q[2]*s],u:u,L:q[5]*s,w:w,al:al}}).filter(function(q){return(window.__R3&&window.__R3.noslope)?Math.abs(q.w-tS)<.6:(q.w>tS-.6&&q.w<tS*1.9+.6)});
+ var lines=[];sl.forEach(function(q){var nn=[-q.u[1],q.u[0]],off=nn[0]*q.c[0]+nn[1]*q.c[1],sm=q.u[0]*q.c[0]+q.u[1]*q.c[1];var L=lines.find(function(l){return l.u[0]*q.u[0]+l.u[1]*q.u[1]>.9998&&Math.abs(l.off-off)<.25&&Math.abs(l.al-q.al)<.03});if(!L){L={u:q.u,n:nn,off:off,S:[],al:q.al};lines.push(L)}L.S.push({c:q.c,s:sm,L:q.L,al:q.al})});
  // ulash nuqtalari (detal tekisligida, z=0)
- var con=[];groups.forEach(function(g){g.T.concat(g.G).forEach(function(t){var sm=(t.s0+t.s1)/2,r=[t.u[0]*sm+t.n[0]*(t.cr+t.h/2),t.u[1]*sm+t.n[1]*(t.cr+t.h/2)];con.push({k:t.k,p:[r[0],r[1],0],u:[t.u[0],t.u[1],0],n:[t.n[0],t.n[1],0],w:t.w,h:t.h})})});
- sl.forEach(function(q){con.push({k:'S',p:[q.c[0],q.c[1],0],u:[q.u[0],q.u[1],0],w:q.L,h:q.w})});laps.forEach(function(l){con.push({k:'L',p:[l.e[0],l.e[1],0],v:[l.v[0],l.v[1],0],u:[l.u[0],l.u[1],0],w:l.w,h:l.h})});
+ var con=[];groups.forEach(function(g,gi){g.T.concat(g.G).forEach(function(t){var sm=(t.s0+t.s1)/2,r=[t.u[0]*sm+t.n[0]*(t.cr+t.h/2),t.u[1]*sm+t.n[1]*(t.cr+t.h/2)];con.push({k:t.k,p:[r[0],r[1],0],u:[t.u[0],t.u[1],0],n:[t.n[0],t.n[1],0],w:t.w,h:t.h,g:t.k==='T'?gi:-1})})});
+ sl.forEach(function(q){con.push({k:'S',p:[q.c[0],q.c[1],0],u:[q.u[0],q.u[1],0],w:q.L,h:q.w,al:q.al})});laps.forEach(function(l){con.push({k:'L',p:[l.e[0],l.e[1],0],v:[l.v[0],l.v[1],0],u:[l.u[0],l.u[1],0],w:l.w,h:l.h})});
  var cx=0,cy=0;O.forEach(function(q){cx+=q[0];cy+=q[1]});
- return{O:O,H:p.h.map(function(h){return pts(h,s)}),groups:groups,lines:lines,laps:laps,con:con,c:[cx/O.length,cy/O.length,0],nf:con.length}}
+ var nT=con.filter(function(c){return c.k==='T'}).length,nS=sl.length;return{nT:nT,nS:nS,closing:nT===0&&nS>=4,O:O,H:p.h.map(function(h){return pts(h,s)}),groups:groups,lines:lines,laps:laps,con:con,c:[cx/O.length,cy/O.length,0],nf:con.length}}
 /* ---------- 2. ulanish ramkalari ---------- */
 function fr(o,a1,a2){var a3=cross(a1,a2);return{o:o,a:[a1,a2,a3]}}
 function poseFrom(PP,Fp,Fq){// PP: {R,T}; Fp ramka P lokal; Fq ramka Q lokal; ikkalasi dunyoda ustma-ust
@@ -11271,15 +11272,15 @@ function p2(u,s,n,c){return[u[0]*s+n[0]*c,u[1]*s+n[1]*c]}
 /* tishli detal (A) va qabul qiluvchi (B) ramkalari */
 function frTab(g,t,rev){var sm=(t.s0+t.s1)/2,o=p2(g.u,sm,g.n,g.cr);return fr([o[0],o[1],0],[rev*g.u[0],rev*g.u[1],0],[-g.n[0],-g.n[1],0])}
 function frTip(g,t,rev){var sm=(t.s0+t.s1)/2,o=p2(g.u,sm,g.n,g.ct);return fr([o[0],o[1],0],[rev*g.u[0],rev*g.u[1],0],[-g.n[0],-g.n[1],0])}
-function frSlot(L,q,sg,T){return fr([q.c[0],q.c[1],sg*T/2],[L.u[0],L.u[1],0],[0,0,sg])}
+function frSlot(L,q,sg,T,s2){var al=q.al||0,v=[-L.u[1],L.u[0],0],c=Math.cos(al),sn=Math.sin(al)*(s2||1);return fr([q.c[0],q.c[1],sg*T/2],[L.u[0],L.u[1],0],[v[0]*sn,v[1]*sn,sg*c])}
 function frGap(g,t,sg,T){var sm=(t.s0+t.s1)/2,o=p2(g.u,sm,g.n,g.ct-T/2);return fr([o[0],o[1],sg*T/2],[g.u[0],g.u[1],0],[0,0,-sg])}
 /* Q ni joylashgan P ga nisbatan mumkin bo'lgan holatlari */
 function cands(P,Q,T){var o=[],FP=P.F,FQ=Q.F,PP=P.pose;
  function pushP(fp,fq,why){o.push({pose:poseFrom(PP,fp,fq),why:why,P:P})}
  // Q tishchasi -> P tirqishi
- FQ.groups.forEach(function(g){var t0=g.T[0];if(!t0)return;FP.lines.forEach(function(L){L.S.forEach(function(q){if(Math.abs(q.L-t0.w)>.8)return;[1,-1].forEach(function(rv){[1,-1].forEach(function(sg){pushP(frSlot(L,q,sg,T),frTab(g,t0,rv),'tab')})})})})});
+ FQ.groups.forEach(function(g){var t0=g.T[0];if(!t0)return;FP.lines.forEach(function(L){L.S.forEach(function(q){if(Math.abs(q.L-t0.w)>.8)return;[1,-1].forEach(function(rv){[1,-1].forEach(function(sg){(q.al?[1,-1]:[1]).forEach(function(s2){pushP(frSlot(L,q,sg,T,s2),frTab(g,t0,rv),'tab')})})})})})});
  // P tishchasi -> Q tirqishi
- FP.groups.forEach(function(g){var t0=g.T[0];if(!t0)return;FQ.lines.forEach(function(L){L.S.forEach(function(q){if(Math.abs(q.L-t0.w)>.8)return;[1,-1].forEach(function(rv){[1,-1].forEach(function(sg){pushP(frTab(g,t0,rv),frSlot(L,q,sg,T),'tab')})})})})});
+ FP.groups.forEach(function(g){var t0=g.T[0];if(!t0)return;FQ.lines.forEach(function(L){L.S.forEach(function(q){if(Math.abs(q.L-t0.w)>.8)return;[1,-1].forEach(function(rv){[1,-1].forEach(function(sg){(q.al?[1,-1]:[1]).forEach(function(s2){pushP(frTab(g,t0,rv),frSlot(L,q,sg,T,s2),'tab')})})})})})});
  // barmoq: Q barmog'i -> P o'yig'i va aksincha
  FQ.groups.forEach(function(gq){var t0=gq.T[0];if(!t0)return;FP.groups.forEach(function(gp){if(Math.abs(gp.h-gq.h)>.6)return;gp.G.forEach(function(gg){if(Math.abs(gg.w-t0.w)>.8)return;[1,-1].forEach(function(rv){[1,-1].forEach(function(sg){pushP(frGap(gp,gg,sg,T),frTip(gq,t0,rv),'finger')})})})})});
  FP.groups.forEach(function(gp){var t0=gp.T[0];if(!t0)return;FQ.groups.forEach(function(gq){if(Math.abs(gp.h-gq.h)>.6)return;gq.G.forEach(function(gg){if(Math.abs(gg.w-t0.w)>.8)return;[1,-1].forEach(function(rv){[1,-1].forEach(function(sg){pushP(frTip(gp,t0,rv),frGap(gq,gg,sg,T),'finger')})})})})});
@@ -11293,23 +11294,25 @@ function Hash(c){this.c=c;this.m={}}
 Hash.prototype.add=function(it){var k=hkey(it.w,this.c);(this.m[k]=this.m[k]||[]).push(it)};
 Hash.prototype.near=function(p,r){var c=this.c,o=[],x0=Math.floor((p[0]-r)/c),x1=Math.floor((p[0]+r)/c),y0=Math.floor((p[1]-r)/c),y1=Math.floor((p[1]+r)/c),z0=Math.floor((p[2]-r)/c),z1=Math.floor((p[2]+r)/c);
  for(var x=x0;x<=x1;x++)for(var y=y0;y<=y1;y++)for(var z=z0;z<=z1;z++){var l=this.m[x+','+y+','+z];if(l)for(var i=0;i<l.length;i++)if(Math.hypot(l[i].w[0]-p[0],l[i].w[1]-p[1],l[i].w[2]-p[2])<=r)o.push(l[i])}return o};
-function wc(R,Tt,c,P,id){return{k:c.k,w:add(mv(R,c.p),Tt),u:c.u?mv(R,c.u):null,n:c.n?mv(R,c.n):null,z:col(R,2),v:c.v?mv(R,c.v):null,wd:c.w,h:c.h,id:id,P:P}}
+function wc(R,Tt,c,P,id){return{k:c.k,w:add(mv(R,c.p),Tt),u:c.u?mv(R,c.u):null,n:c.n?mv(R,c.n):null,z:col(R,2),v:c.v?mv(R,c.v):null,wd:c.w,h:c.h,al:c.al||0,g:c.g,id:id,P:P}}
 /* "ona" (tirqish/o'yiq) va "ota" (tishcha) to'liq kirishi: eni teng, o'qlari parallel, tishcha tekislikka tik va qalinlik bo'ylab to'liq kiradi */
 function fit(a,b,T){if(a.k==='L'||b.k==='L')return a.k===b.k&&dot(a.v,b.v)<-.9&&Math.abs(dot(a.z,b.z))<.1;var m=a.k==='T'?a:b,f=a.k==='T'?b:a;if(m.k!=='T'||f.k==='T')return false;
- if(Math.abs(m.wd-f.wd)>.7)return false;if(Math.abs(dot(m.u,f.u))<.97)return false;if(Math.abs(dot(m.n,f.z))<.97)return false;if(m.h<T*.7)return false;if(f.k==='G'&&Math.abs(f.h-T)>Math.max(.6,T*.4))return false;return true}
+ if(Math.abs(m.wd-f.wd)>.7)return false;if(Math.abs(dot(m.u,f.u))<.97)return false;var dz=Math.abs(dot(m.n,f.z));if(f.al?Math.abs(dz-Math.cos(f.al))>.04:dz<.97)return false;if(m.h<T*.7)return false;if(f.k==='G'&&Math.abs(f.h-T)>Math.max(.6,T*.4))return false;return true}
 function inside(P,w,T){var l=mtv(P.pose.R,sub(w,P.pose.T)),z=Math.abs(l[2]);if(z>T/2+.7)return 0;var k=z<T/2-.35?1:z>T/2-.7?2:0;if(!k)return 0;if(!pin(P.F.O,l[0],l[1]))return 0;return P.F.H.some(function(h){return pin(h,l[0],l[1])})?0:k}
-function score(Q,pose,H,placed,T,tol){var n=0,used={};Q.F.con.forEach(function(c){var x=wc(pose.R,pose.T,c,Q,0),m=MATCH[c.k];var nb=H.near(x.w,tol);for(var i=0;i<nb.length;i++){var it=nb[i];if(!m[it.k]||used[it.id]||!fit(x,it,T))continue;used[it.id]=1;n++;break}});
+function score(Q,pose,H,placed,T,tol){var n=0,used={},gt={},gm={};Q.F.con.forEach(function(c){var x=wc(pose.R,pose.T,c,Q,0),m=MATCH[c.k],hit=0;if(c.g>=0)gt[c.g]=(gt[c.g]||0)+1;var nb=H.near(x.w,tol);for(var i=0;i<nb.length;i++){var it=nb[i];if(!m[it.k]||used[it.id]||!fit(x,it,T))continue;used[it.id]=1;n++;hit=1;break}if(hit&&c.g>=0)gm[c.g]=(gm[c.g]||0)+1});
+ var gb=0;for(var gk in gm){var miss=gt[gk]-gm[gk];gb+=miss?-.5*miss:(gt[gk]>=2?.5:0)}
+ var sib=0;placed.forEach(function(P){if(P.sk===Q.sk&&P!==Q&&dot(col(P.pose.R,2),col(pose.R,2))>.999&&dot(col(P.pose.R,0),col(pose.R,0))>.999)sib=.3});
  if(!n)return{s:0,n:0};
  // kesishib ketish (bir detal boshqasining ichidan o'tmasin)
  var bad=0,touch=0,step=Math.max(1,Math.floor(Q.F.O.length/40));for(var i=0;i<Q.F.O.length;i+=step){var q=Q.F.O[i],w=add(mv(pose.R,[q[0],q[1],0]),pose.T);for(var j=0;j<placed.length;j++){var P=placed[j];if(w[0]<P.bb[0]-1||w[0]>P.bb[3]+1||w[1]<P.bb[1]-1||w[1]>P.bb[4]+1||w[2]<P.bb[2]-1||w[2]>P.bb[5]+1)continue;var r2=inside(P,w,T);if(r2===1){bad++;break}if(r2===2){touch++;break}}}
  var cw=add(mv(pose.R,Q.F.c),pose.T);
- return{s:n-bad*.6+Math.min(.5,touch*.05),n:n,bad:bad,cw:cw}}
+ return{s:n+((window.__R3&&window.__R3.nogb)?0:gb)+((window.__R3&&window.__R3.nosib)?0:sib)-bad*.6+Math.min(.5,touch*.05),n:n,bad:bad,cw:cw}}
 function dens2(P,st){var o=[];for(var i=0;i<P.length;i++){var a=P[i],b=P[(i+1)%P.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]),n=Math.max(1,Math.ceil(L/st));for(var k=0;k<n;k++)o.push([a[0]+(b[0]-a[0])*k/n,a[1]+(b[1]-a[1])*k/n])}return o}
 function wbb(Pt){var a=[1e9,1e9,1e9,-1e9,-1e9,-1e9];Pt.F.O.forEach(function(q){var w=add(mv(Pt.pose.R,[q[0],q[1],0]),Pt.pose.T);for(var k=0;k<3;k++){if(w[k]<a[k])a[k]=w[k];if(w[k]>a[k+3])a[k+3]=w[k]}});return a}
 /* ---------- 4. yig'ish ---------- */
 function assemble(D,s,T,HN){HN=HN||{};var FL={};(HN.flat||[]).forEach(function(i){FL[i]=1});var PR=HN.pair||{},AL=HN.alt||{},FX=HN.fix||{};var t0=performance.now();var tS=D.srcT?D.srcT*s:null;
  if(!tS){var hist={};D.parts.forEach(function(p){var O=simp(pts(p.o,s));for(var i=0;i<O.length;i++){var a=O[i],b=O[(i+1)%O.length],L=Math.hypot(b[0]-a[0],b[1]-a[1]);if(L>=1&&L<=12){var k=L.toFixed(1);hist[k]=(hist[k]||0)+1}}});var best=0;for(var k in hist)if(hist[k]>best&&+k>=1.5){best=hist[k];tS=+k}if(!tS)tS=T}
- var N=D.parts.map(function(p,i){return{i:i,F:feats(p,s,tS,T),pose:null}});N.forEach(function(q){var xs=q.F.O.map(function(v){return v[0]}),ys=q.F.O.map(function(v){return v[1]}),w=Math.max.apply(0,xs)-Math.min.apply(0,xs),h=Math.max.apply(0,ys)-Math.min.apply(0,ys);q.sk=q.F.O.length+'_'+Math.round(Math.max(w,h))+'x'+Math.round(Math.min(w,h))});
+ var N=D.parts.map(function(p,i){return{i:i,F:feats(p,s,tS,T),pose:null}});N.forEach(function(q){var xs=q.F.O.map(function(v){return v[0]}),ys=q.F.O.map(function(v){return v[1]}),w=Math.max.apply(0,xs)-Math.min.apply(0,xs),h=Math.max.apply(0,ys)-Math.min.apply(0,ys);q.sk=q.F.O.length+'_'+Math.round(Math.max(w,h))+'x'+Math.round(Math.min(w,h))});var mxA=0;N.forEach(function(q){if(q.F.nS>0)mxA=Math.max(mxA,Math.abs(area2(q.F.O)))});N.forEach(function(q){q.F.closing=q.F.closing&&Math.abs(area2(q.F.O))<mxA*.999});
  var tot=N.reduce(function(a,q){return a+q.F.nf},0);if(tot<2)return{ok:false,tS:tS,placed:0,poses:N.map(function(){return null}),why:'ulanish (tishcha, tirqish) topilmadi'};
  var tol=Math.max(1.3,T*.6);
  function ov(a,b,m){return!(a[3]<b[0]-m||a[0]>b[3]+m||a[4]<b[1]-m||a[1]>b[4]+m||a[5]<b[2]-m||a[2]>b[5]+m)}
@@ -11330,11 +11333,11 @@ function assemble(D,s,T,HN){HN=HN||{};var FL={};(HN.flat||[]).forEach(function(i
     if(!Lc.length&&PR[Q.i]!=null){var Pp=N[+PR[Q.i]];if(Pp&&Pp.pose){var cp=add(mv(Pp.pose.R,Pp.F.c),Pp.pose.T),nP=col(Pp.pose.R,2);Lc=[1,-1].map(function(sg){var R=Pp.pose.R,Tq=sub(add(cp,mul(nP,sg*T)),mv(R,Q.F.c));return{pose:{R:R,T:Tq},why:'glue',P:Pp,r:{s:0,n:0,cw:add(mv(R,Q.F.c),Tq)}}})}}
     if(!Lc.length)return;var k=((+AL[Q.i]||0)%Lc.length+Lc.length)%Lc.length;Q.nalt=Lc.length;Q.alt=k;best={Q:Q,c:Lc[k],r:Lc[k].r,man:1}});
    if(!best){var RK=[];
-   N.forEach(function(Q){if(Q.pose)return;var need=Math.min(2,Q.F.nf);Q.cs.forEach(function(c){var r=c.r;if(r.n<(c.why==='lap'?1:need))return;RK.push({Q:Q,c:c,r:r})})});
-   RK.sort(function(x,y){return y.r.s-x.r.s||y.r.n-x.r.n});var RD=[];RK.forEach(function(x){if(RD.length>=4)return;if(RD.some(function(y){return y.Q===x.Q&&Math.hypot(x.r.cw[0]-y.r.cw[0],x.r.cw[1]-y.r.cw[1],x.r.cw[2]-y.r.cw[2])<1&&Math.abs(dot(col(x.c.pose.R,2),col(y.c.pose.R,2)))>.999}))return;RD.push(x)});
-   if(RD.length){var na=RD.filter(function(x){return x.r.s>=RD[0].r.s-1.01&&x.r.s>=.9}).length;if(na>1)br.push({d:step,n:na});best=RD[force&&force.d===step&&RD[force.j]&&RD[force.j].r.s>=.9?force.j:0];step++}
+   N.forEach(function(Q){if(Q.pose)return;var need=Math.min(2,Q.F.nf),late=Q.F.closing&&!(window.__R3&&window.__R3.noclose);Q.cs.forEach(function(c){var r=c.r;if(r.n<(c.why==='lap'?1:need))return;RK.push({Q:Q,c:c,r:r,e:r.s-(late&&r.n<Q.F.nS*.5?1.5:0)})})});
+   RK.sort(function(x,y){return y.e-x.e||y.r.n-x.r.n});var RD=[];RK.forEach(function(x){if(RD.length>=4)return;if(RD.some(function(y){return y.Q===x.Q&&Math.hypot(x.r.cw[0]-y.r.cw[0],x.r.cw[1]-y.r.cw[1],x.r.cw[2]-y.r.cw[2])<1&&Math.abs(dot(col(x.c.pose.R,2),col(y.c.pose.R,2)))>.999}))return;RD.push(x)});
+   if(RD.length){var na=RD.filter(function(x){return x.e>=RD[0].e-1.01&&x.r.s>=.9}).length;if(na>1)br.push({d:step,n:na});best=RD[force&&force.d===step&&RD[force.j]&&RD[force.j].r.s>=.9?force.j:0];step++}
    if(!best||best.r.s<.9){best=null;
-    N.forEach(function(Q){if(Q.pose)return;var Lc=Q.cs.filter(function(c){return c.r.n>=1&&c.r.s>=.9});if(!Lc.length)return;Lc.sort(function(x,y){return y.r.s-x.r.s});
+    N.forEach(function(Q){if(Q.pose)return;if(Q.F.closing)return;var Lc=Q.cs.filter(function(c){return c.r.n>=1&&c.r.s>=.9});if(!Lc.length)return;Lc.sort(function(x,y){return y.r.s-x.r.s});
      var tp=Lc[0],nz=col(tp.pose.R,2),uq=Lc.filter(function(x){return x.r.s>=tp.r.s-.05}).every(function(x){return Math.hypot(x.r.cw[0]-tp.r.cw[0],x.r.cw[1]-tp.r.cw[1],x.r.cw[2]-tp.r.cw[2])<2&&Math.abs(dot(col(x.pose.R,2),nz))>.99});
      if(uq&&(!best||tp.r.s>best.r.s))best={Q:Q,c:tp,r:tp.r}});
     if(!best)break}}
@@ -11344,7 +11347,7 @@ function assemble(D,s,T,HN){HN=HN||{};var FL={};(HN.flat||[]).forEach(function(i
  // ildiz: bir nechta nomzod sinab ko'riladi (tirqishi ko'p va eng katta detallar)
  var bySl=N.slice().sort(function(a,b){var sa=a.F.lines.reduce(function(x,l){return x+l.S.length},0),sb=b.F.lines.reduce(function(x,l){return x+l.S.length},0);if(sb!==sa)return sb-sa;return Math.abs(area2(b.F.O))-Math.abs(area2(a.F.O))}).filter(function(q){return q.F.nf>0}),
   byAr=N.slice().filter(function(q){return q.F.nf>0}).sort(function(a,b){return Math.abs(area2(b.F.O))-Math.abs(area2(a.F.O))}),roots=[];
- bySl.slice(0,3).concat(byAr.slice(0,3)).forEach(function(q){if(roots.indexOf(q)<0&&!FL[q.i]&&!FX[q.i])roots.push(q)});if(HN.root!=null&&N[+HN.root])roots=[N[+HN.root]];if(!roots.length)roots=[N[0]];
+ bySl.slice(0,3).concat(byAr.slice(0,3)).forEach(function(q){if(roots.indexOf(q)<0&&!FL[q.i]&&!FX[q.i]&&!q.F.closing)roots.push(q)});if(HN.root!=null&&N[+HN.root])roots=[N[+HN.root]];if(!roots.length)roots=[N[0]];
  /* butun yig'ma bahosi: har bir tishcha tirqishga to'liq kirdimi, tirqishlar bo'sh qolmadimi, detallar kesishmadimi */
  function evalRun(placed){var HA=new Hash(4),id=0,all=[];placed.forEach(function(P){P.F.con.forEach(function(c){var x=wc(P.pose.R,P.pose.T,c,P,++id);HA.add(x);all.push(x)})});
   var C={T:0,To:0,S:0,So:0,G:0,Go:0,L:0,Lo:0};all.forEach(function(x){C[x.k]++;var m=MATCH[x.k],ok=HA.near(x.w,tol).some(function(it){return it.P!==x.P&&m[it.k]&&fit(x,it,T)});if(ok)C[x.k+'o']++});
@@ -11370,7 +11373,8 @@ function assemble(D,s,T,HN){HN=HN||{};var FL={};(HN.flat||[]).forEach(function(i
  var B=[1e9,1e9,1e9,-1e9,-1e9,-1e9];placed.forEach(function(P){for(var k=0;k<3;k++){B[k]=Math.min(B[k],P.bb[k]);B[k+3]=Math.max(B[k+3],P.bb[k+3])}});
  var sh=[-(B[0]+B[3])/2,-B[1]+T/2,-(B[2]+B[5])/2];placed.forEach(function(P){P.pose.T=add(P.pose.T,sh)});
  var ext=[B[3]-B[0],B[4]-B[1]+T,B[5]-B[2]];
- return{ok:placed.length>1,tS:tS,placed:placed.length,joints:joints,why:why,ext:ext,ms:Math.round(performance.now()-t0),ev:EV,vi:vi,variants:VR.map(function(v){return{spec:v.spec,fit:v.ev.fit,placed:v.ev.placed,coll:v.ev.coll,un:v.ev.un,C:v.ev.C,root:v.root}}),
+ var SLO={};N.forEach(function(q){q.F.lines.forEach(function(l){if(l.al>.03){var d=Math.round(l.al*180/Math.PI);SLO[d]=(SLO[d]||0)+l.S.length}})});var RU={slope:SLO,closing:N.filter(function(q){return q.F.closing}).map(function(q){return q.i}),sib:N.filter(function(q){return N.some(function(o){return o!==q&&o.sk===q.sk})}).length};
+ return{ok:placed.length>1,rules:RU,tS:tS,placed:placed.length,joints:joints,why:why,ext:ext,ms:Math.round(performance.now()-t0),ev:EV,vi:vi,variants:VR.map(function(v){return{spec:v.spec,fit:v.ev.fit,placed:v.ev.placed,coll:v.ev.coll,un:v.ev.un,C:v.ev.C,root:v.root}}),
   poses:N.map(function(q){return q.pose?{R:q.pose.R,T:q.pose.T,stage:q.stage,order:q.order,why:q.why||'asos',n:q.nm||0,nalt:q.nalt||0,alt:q.alt||0,by:q.by!=null?q.by:-1}:null}),root:root.i,_N:N,_T:T,_tol:tol}}
 var CACHE=new Map();
 function get(key,D,s,T,HN){var k=key+'|'+s+'|'+T+'|'+JSON.stringify(HN||{});if(CACHE.has(k))return CACHE.get(k);var r;try{r=assemble(D,s,T,HN)}catch(e){console.warn('lm-imp3d',e);r={ok:false,placed:0,poses:[],why:String(e&&e.message||e)}}if(CACHE.size>20)CACHE.clear();CACHE.set(k,r);return r}
